@@ -1,6 +1,8 @@
 use bevy::{prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
+use input::{Action, ControlSettings, InputPlugin};
+use leafwing_input_manager::{prelude::ActionState, InputManagerBundle};
 
 pub const HEIGHT: f32 = 900.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
@@ -20,6 +22,8 @@ pub struct Player {
 pub struct Enemy {
     speed: f32,
 }
+
+mod input;
 
 #[derive(AssetCollection)]
 struct GameAssets {
@@ -58,6 +62,7 @@ fn main() {
             ..Default::default()
         })
         .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(InputPlugin)
         .add_startup_system(spawn_camera)
         .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_starting_scene))
         .add_system(player_movement)
@@ -69,28 +74,30 @@ fn spawn_camera(mut commands: Commands) {
 }
 
 fn player_movement(
-    mut player: Query<(&Player, &mut Transform)>,
+    mut player: Query<(&Player, &mut Transform, &ActionState<Action>)>,
     time: Res<Time>,
-    //TODO keyboard remaping :)
-    input: Res<Input<KeyCode>>,
 ) {
-    if let Ok((player, mut transform)) = player.get_single_mut() {
-        if input.pressed(KeyCode::W) {
+    if let Ok((player, mut transform, input)) = player.get_single_mut() {
+        if input.pressed(Action::Forward) {
             transform.translation.y += time.delta_seconds() * player.speed;
         }
-        if input.pressed(KeyCode::S) {
+        if input.pressed(Action::Backward) {
             transform.translation.y -= time.delta_seconds() * player.speed;
         }
-        if input.pressed(KeyCode::D) {
+        if input.pressed(Action::Right) {
             transform.translation.x += time.delta_seconds() * player.speed;
         }
-        if input.pressed(KeyCode::A) {
+        if input.pressed(Action::Left) {
             transform.translation.x -= time.delta_seconds() * player.speed;
         }
     }
 }
 
-fn spawn_starting_scene(mut commands: Commands, assets: Res<GameAssets>) {
+fn spawn_starting_scene(
+    mut commands: Commands,
+    assets: Res<GameAssets>,
+    controls: Res<ControlSettings>,
+) {
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite {
@@ -102,7 +109,12 @@ fn spawn_starting_scene(mut commands: Commands, assets: Res<GameAssets>) {
             ..default()
         })
         .insert(Player { speed: 100.0 })
+        .insert_bundle(InputManagerBundle::<Action> {
+            input_map: controls.input.clone(),
+            ..default()
+        })
         .insert(Name::new("Player"));
+
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite {
