@@ -5,6 +5,7 @@ use bevy_asset_loader::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
 use input::{Action, ControlSettings, InputPlugin};
 use leafwing_input_manager::{prelude::ActionState, InputManagerBundle};
+use mouse::{mouse_position, MousePos};
 
 pub const HEIGHT: f32 = 900.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
@@ -23,14 +24,26 @@ pub struct Player {
     roll_direction: Vec3,
     rolling: bool,
     roll_timer: Timer,
+    swing_radius: f32,
+    swing_direction: f32,
+    swinging: bool,
+    swing_timer: Timer,
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Sword {
+    damage: f32,
+}
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct Enemy {
     speed: f32,
 }
 
 mod input;
+mod mouse;
 
 #[derive(AssetCollection)]
 struct GameAssets {
@@ -44,6 +57,16 @@ struct GameAssets {
     ))]
     #[asset(path = "white_pixel.png")]
     player: Handle<TextureAtlas>,
+    #[asset(texture_atlas(
+        tile_size_x = 1.,
+        tile_size_y = 1.,
+        columns = 1,
+        rows = 1,
+        padding_x = 0.,
+        padding_y = 0.
+    ))]
+    #[asset(path = "white_pixel.png")]
+    enemy: Handle<TextureAtlas>,
 }
 
 fn main() {
@@ -70,18 +93,64 @@ fn main() {
         })
         .add_plugin(WorldInspectorPlugin::new())
         .register_type::<Player>()
+        .register_type::<Enemy>()
+        .register_type::<Sword>()
         .add_plugin(InputPlugin)
         .add_startup_system(spawn_camera)
         .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_starting_scene))
         .add_system(player_movement)
+        .add_system(sword_swing)
         .add_system(player_dodge_roll)
         .add_system(enemy_movement)
+        .insert_resource(MousePos::default())
+        .add_system(mouse_position)
         .run();
 }
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
 }
+//PERF this query could have a with marker to not be so broad
+fn sword_swing(
+    mut player: Query<(&Children, &mut Player, &ActionState<Action>)>,
+    mut transforms: Query<(&mut Transform, &GlobalTransform), Without<Enemy>>,
+    mouse: Res<MousePos>,
+    time: Res<Time>,
+) {
+    for (children, mut player, action) in &mut player {
+        // Handle starting swing
+        if !player.swinging && action.just_pressed(Action::Swing) {
+            player.swinging = true;
+            player.swing_timer.set_elapsed(Duration::from_secs(0));
+        }
+
+        //If there are more than 1 child this needs rework
+        assert!(children.iter().count() == 1);
+        for child in children {
+            //If swinging tick timer and rotation depends on speed/timer percent
+            if player.swinging {
+                player.swing_timer.tick(time.delta());
+                if player.swing_timer.just_finished() {
+                    player.swinging = false;
+                } else {
+                    let (mut transform, _global) = transforms.get_mut(*child).unwrap();
+                    transform.rotation = Quat::from_axis_angle(
+                        Vec3::Z,
+                        player.swing_direction + player.swing_radius * player.swing_timer.percent(),
+                    );
+                }
+            //Otherwise match mouse angle with a bit of an offset and record it
+            } else {
+                let (mut transform, global) = transforms.get_mut(*child).unwrap();
+                let direction = **mouse - global.translation().truncate();
+                player.swing_direction =
+                    -player.swing_radius / 2.0 - direction.angle_between(Vec2::Y);
+                transform.rotation = Quat::from_axis_angle(Vec3::Z, player.swing_direction);
+            }
+        }
+    }
+}
+
 fn player_dodge_roll(
     mut player: Query<(&mut Player, &mut Transform, &ActionState<Action>)>,
     time: Res<Time>,
@@ -177,16 +246,41 @@ fn spawn_starting_scene(
         })
         .insert(Player {
             speed: 200.0,
-            roll_speed: 900.0,
+            roll_speed: 700.0,
             roll_direction: Vec3::ZERO,
             rolling: false,
             roll_timer: Timer::from_seconds(0.4, true),
+            swing_radius: 1.5 * PI / 2.0,
+            swing_direction: 0.0,
+            swinging: false,
+            swing_timer: Timer::from_seconds(0.2, true),
         })
         .insert_bundle(InputManagerBundle::<Action> {
             input_map: controls.input.clone(),
             ..default()
         })
-        .insert(Name::new("Player"));
+        .insert(Name::new("Player"))
+        .with_children(|commands| {
+            commands
+                .spawn_bundle(SpatialBundle::default())
+                .insert(Name::new("SwordParent"))
+                .with_children(|commands| {
+                    commands
+                        .spawn_bundle(SpriteSheetBundle {
+                            sprite: TextureAtlasSprite {
+                                color: Color::PINK,
+                                ..default()
+                            },
+                            texture_atlas: assets.player.clone(),
+                            transform: Transform::from_xyz(0.0, 0.85, 0.1)
+                                .with_scale(Vec3::new(0.2, 0.9, 1.0)),
+                            //.with_rotation(Quat::from_axis_angle(Vec3::Z, -PI / 4.0)),
+                            ..default()
+                        })
+                        .insert(Sword { damage: 10.0 })
+                        .insert(Name::new("Sword"));
+                });
+        });
 
     commands
         .spawn_bundle(SpriteSheetBundle {
@@ -194,7 +288,7 @@ fn spawn_starting_scene(
                 color: Color::PURPLE,
                 ..default()
             },
-            texture_atlas: assets.player.clone(),
+            texture_atlas: assets.enemy.clone(),
             transform: Transform::from_xyz(200.0, 200.0, 0.0).with_scale(Vec3::splat(100.)),
             ..default()
         })
