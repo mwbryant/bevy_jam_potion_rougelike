@@ -1,15 +1,15 @@
-use std::{f32::consts::PI, time::Duration};
-
-use bevy::{prelude::*, window::PresentMode};
+use bevy::window::PresentMode;
 use bevy_asset_loader::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
-use input::{Action, ControlSettings, InputPlugin};
-use leafwing_input_manager::{prelude::ActionState, InputManagerBundle};
-use mouse::{mouse_position, MousePos};
-use player::{Player, PlayerPlugin};
+use prelude::*;
 
 pub const HEIGHT: f32 = 900.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
+
+mod input;
+mod mouse;
+mod player;
+mod prelude;
 
 #[derive(Clone, Copy, Hash, Eq, PartialEq, Debug)]
 pub enum GameState {
@@ -22,10 +22,6 @@ pub enum GameState {
 pub struct Enemy {
     speed: f32,
 }
-
-mod input;
-mod mouse;
-mod player;
 
 #[derive(AssetCollection)]
 struct GameAssets {
@@ -102,11 +98,7 @@ fn enemy_movement(
     }
 }
 
-fn spawn_starting_scene(
-    mut commands: Commands,
-    assets: Res<GameAssets>,
-    controls: Res<ControlSettings>,
-) {
+fn spawn_starting_scene(mut commands: Commands, assets: Res<GameAssets>) {
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite {

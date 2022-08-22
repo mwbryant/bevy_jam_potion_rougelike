@@ -1,4 +1,3 @@
-// Whole file stolen from leafwing examples with some modifications
 use bevy::{
     ecs::system::SystemParam,
     input::{keyboard::KeyboardInput, mouse::MouseButtonInput, ButtonState},
@@ -6,7 +5,7 @@ use bevy::{
 };
 use bevy_inspector_egui::bevy_egui::{
     egui::{Align2, Area, Grid, Window},
-    EguiContext, EguiPlugin,
+    EguiContext,
 };
 use derive_more::Display;
 use leafwing_input_manager::{prelude::*, user_input::InputKind};
@@ -15,7 +14,7 @@ const UI_MARGIN: f32 = 10.0;
 
 pub struct InputPlugin;
 
-#[derive(Actionlike, PartialEq, Clone, Copy, Display)]
+#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Display)]
 pub enum Action {
     // Movement
     Forward,
@@ -66,6 +65,7 @@ fn toggle_keybind_menu(keyboard: Res<Input<KeyCode>>, mut settings: ResMut<Contr
     }
 }
 
+// Remapping system just taken from leafwing examples with some modifications
 fn controls_window_system(
     mut commands: Commands,
     mut egui: ResMut<EguiContext>,

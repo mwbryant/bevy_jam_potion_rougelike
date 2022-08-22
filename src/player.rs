@@ -1,13 +1,7 @@
 use std::{f32::consts::PI, time::Duration};
 
-use bevy::prelude::*;
+use crate::prelude::*;
 use leafwing_input_manager::{prelude::ActionState, InputManagerBundle};
-
-use crate::{
-    input::{Action, ControlSettings},
-    mouse::MousePos,
-    Enemy, GameAssets, GameState,
-};
 
 pub struct PlayerPlugin;
 
