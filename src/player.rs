@@ -25,6 +25,9 @@ pub struct Sword {
     damage: f32,
 }
 
+#[derive(Component)]
+pub struct SwordParent;
+
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Player>()
@@ -39,7 +42,7 @@ impl Plugin for PlayerPlugin {
 //PERF this query could have a with marker to not be so broad
 fn sword_swing(
     mut player: Query<(&Children, &mut Player, &ActionState<Action>)>,
-    mut transforms: Query<(&mut Transform, &GlobalTransform), Without<Enemy>>,
+    mut transforms: Query<(&mut Transform, &GlobalTransform), With<SwordParent>>,
     mouse: Res<MousePos>,
     time: Res<Time>,
 ) {
@@ -51,23 +54,21 @@ fn sword_swing(
         }
 
         //If there are more than 1 child this needs rework
-        assert!(children.iter().count() == 1);
+        //assert!(children.iter().count() == 1);
         for child in children {
             //If swinging tick timer and rotation depends on speed/timer percent
             if player.swinging {
                 player.swing_timer.tick(time.delta());
                 if player.swing_timer.just_finished() {
                     player.swinging = false;
-                } else {
-                    let (mut transform, _global) = transforms.get_mut(*child).unwrap();
+                } else if let Ok((mut transform, _global)) = transforms.get_mut(*child) {
                     transform.rotation = Quat::from_axis_angle(
                         Vec3::Z,
                         player.swing_direction + player.swing_radius * player.swing_timer.percent(),
                     );
                 }
             //Otherwise match mouse angle with a bit of an offset and record it
-            } else {
-                let (mut transform, global) = transforms.get_mut(*child).unwrap();
+            } else if let Ok((mut transform, global)) = transforms.get_mut(*child) {
                 let direction = **mouse - global.translation().truncate();
                 player.swing_direction =
                     -player.swing_radius / 2.0 - direction.angle_between(Vec2::Y);
@@ -146,7 +147,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite {
-                color: Color::GREEN,
+                color: Color::NONE,
                 ..default()
             },
             texture_atlas: assets.player.clone(),
@@ -162,22 +163,29 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             swing_radius: 1.5 * PI / 2.0,
             swing_direction: 0.0,
             swinging: false,
-            swing_timer: Timer::from_seconds(0.2, true),
+            swing_timer: Timer::from_seconds(0.15, true),
         })
         .insert_bundle(InputManagerBundle::<Action> {
             input_map: controls.input.clone(),
             ..default()
         })
         .insert(Name::new("Player"))
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec2::new(50.0, 50.0).extend(0.0),
+            border_radius: None,
+        })
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Dynamic)
         .with_children(|commands| {
             commands
                 .spawn_bundle(SpatialBundle::default())
                 .insert(Name::new("SwordParent"))
+                .insert(SwordParent)
                 .with_children(|commands| {
                     commands
                         .spawn_bundle(SpriteSheetBundle {
                             sprite: TextureAtlasSprite {
-                                color: Color::PINK,
+                                color: Color::NONE,
                                 ..default()
                             },
                             texture_atlas: assets.player.clone(),
@@ -186,6 +194,11 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                             //.with_rotation(Quat::from_axis_angle(Vec3::Z, -PI / 4.0)),
                             ..default()
                         })
+                        .insert(CollisionShape::Cuboid {
+                            half_extends: Vec2::new(10.0, 45.0).extend(0.0),
+                            border_radius: None,
+                        })
+                        .insert(RigidBody::Sensor)
                         .insert(Sword { damage: 10.0 })
                         .insert(Name::new("Sword"));
                 });
