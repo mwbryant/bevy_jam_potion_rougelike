@@ -1,12 +1,13 @@
 use bevy::window::PresentMode;
 use bevy_asset_loader::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
-use prelude::*;
+use prelude::{health::HealthPlugin, *};
 
 pub const HEIGHT: f32 = 900.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
 
 mod enemy;
+mod health;
 mod input;
 mod mouse;
 mod player;
@@ -64,6 +65,7 @@ fn main() {
         .add_plugin(InputPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
+        .add_plugin(HealthPlugin)
         //One off weird systems
         .add_startup_system(spawn_camera)
         .insert_resource(MousePos::default())

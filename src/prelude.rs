@@ -1,6 +1,7 @@
 pub use bevy::prelude::*;
 
 pub use crate::enemy::*;
+pub use crate::health::*;
 pub use crate::input::*;
 pub use crate::mouse::*;
 pub use crate::player::*;
@@ -13,4 +14,12 @@ pub use leafwing_input_manager::prelude::ActionState;
 pub enum GameState {
     Splash,
     Main,
+}
+
+#[derive(PhysicsLayer)]
+pub enum PhysicLayer {
+    World,
+    Player,
+    Sword,
+    Enemy,
 }

@@ -52,7 +52,7 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .insert(Enemy {
             speed: 40.0,
-            attack_speed: 300.0,
+            attack_speed: 350.0,
             target_offset: 150.0,
             charge_time: 1.0,
             attack_time: 0.4,
@@ -62,8 +62,14 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
             half_extends: Vec2::new(50.0, 50.0).extend(1.0),
             border_radius: None,
         })
+        .insert(Health {
+            health: 3,
+            flashing: false,
+            damage_flash_timer: Timer::from_seconds(1.0, true),
+        })
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
         .insert(AiStage::GetInRange)
         .insert(Name::new("Enemy"));
 }
@@ -82,7 +88,6 @@ fn enemy_movement(
             if direction.length_squared() > TOLERANCE {
                 transform.translation += direction.normalize() * enemy.speed * time.delta_seconds();
             } else if matches!(*stage, AiStage::GetInRange) {
-                println!("attack!");
                 *stage = AiStage::Charge(Timer::from_seconds(enemy.charge_time, false));
             }
         }

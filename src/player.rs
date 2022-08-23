@@ -165,6 +165,11 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             swinging: false,
             swing_timer: Timer::from_seconds(0.15, true),
         })
+        .insert(Health {
+            health: 3,
+            flashing: false,
+            damage_flash_timer: Timer::from_seconds(1.0, true),
+        })
         .insert_bundle(InputManagerBundle::<Action> {
             input_map: controls.input.clone(),
             ..default()
@@ -174,6 +179,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             half_extends: Vec2::new(50.0, 50.0).extend(1.0),
             border_radius: None,
         })
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Player))
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
         .with_children(|commands| {
@@ -199,6 +205,10 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                             border_radius: None,
                         })
                         .insert(RigidBody::Sensor)
+                        .insert(
+                            CollisionLayers::all_masks::<PhysicLayer>()
+                                .with_group(PhysicLayer::Sword),
+                        )
                         .insert(Sword { damage: 10.0 })
                         .insert(Name::new("Sword"));
                 });
