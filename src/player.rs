@@ -170,12 +170,12 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             ..default()
         })
         .insert(Name::new("Player"))
-        //.insert(CollisionShape::Cuboid {
-        //half_extends: Vec2::new(50.0, 50.0).extend(1.0),
-        //border_radius: None,
-        //})
-        //.insert(RotationConstraints::lock())
-        //.insert(RigidBody::Dynamic)
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec2::new(50.0, 50.0).extend(1.0),
+            border_radius: None,
+        })
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Dynamic)
         .with_children(|commands| {
             commands
                 .spawn_bundle(SpatialBundle::default())
@@ -194,11 +194,11 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                             //.with_rotation(Quat::from_axis_angle(Vec3::Z, -PI / 4.0)),
                             ..default()
                         })
-                        //.insert(CollisionShape::Cuboid {
-                        //half_extends: Vec2::new(10.0, 45.0).extend(1.0),
-                        //border_radius: None,
-                        //})
-                        //.insert(RigidBody::Sensor)
+                        .insert(CollisionShape::Cuboid {
+                            half_extends: Vec2::new(10.0, 45.0).extend(1.0),
+                            border_radius: None,
+                        })
+                        .insert(RigidBody::Sensor)
                         .insert(Sword { damage: 10.0 })
                         .insert(Name::new("Sword"));
                 });
