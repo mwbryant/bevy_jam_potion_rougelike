@@ -171,7 +171,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
         })
         .insert(Name::new("Player"))
         .insert(CollisionShape::Cuboid {
-            half_extends: Vec2::new(50.0, 50.0).extend(0.0),
+            half_extends: Vec2::new(50.0, 50.0).extend(1.0),
             border_radius: None,
         })
         .insert(RotationConstraints::lock())
@@ -195,7 +195,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                             ..default()
                         })
                         .insert(CollisionShape::Cuboid {
-                            half_extends: Vec2::new(10.0, 45.0).extend(0.0),
+                            half_extends: Vec2::new(10.0, 45.0).extend(1.0),
                             border_radius: None,
                         })
                         .insert(RigidBody::Sensor)

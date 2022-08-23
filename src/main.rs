@@ -112,7 +112,7 @@ fn spawn_starting_scene(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .insert(Enemy { speed: 40.0 })
         .insert(CollisionShape::Cuboid {
-            half_extends: Vec2::new(50.0, 50.0).extend(0.0),
+            half_extends: Vec2::new(50.0, 50.0).extend(1.0),
             border_radius: None,
         })
         .insert(RotationConstraints::lock())
