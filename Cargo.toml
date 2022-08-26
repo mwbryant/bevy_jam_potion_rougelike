@@ -10,7 +10,8 @@ opt-level = 0
 opt-level = 3
 
 [dependencies]
-bevy = { version = "0.8", features = ["dynamic"] } 
+ # bevy = { version = "0.8", features = ["dynamic"] } 
+ bevy = { version = "0.8"} 
 bevy-inspector-egui = "0.12"
 serde = "1.0.136"
 ron = "0.8.0"

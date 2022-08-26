@@ -1,6 +1,3 @@
-use bevy_inspector_egui::{Inspectable, RegisterInspectable};
-use heron::rapier_plugin::nalgebra::default_allocator;
-
 use crate::prelude::*;
 
 pub struct EnemyPlugin;
@@ -52,7 +49,7 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .insert(Enemy {
             speed: 40.0,
-            attack_speed: 350.0,
+            attack_speed: 450.0,
             target_offset: 150.0,
             charge_time: 1.0,
             attack_time: 0.4,
@@ -65,7 +62,8 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
         .insert(Health {
             health: 3,
             flashing: false,
-            damage_flash_timer: Timer::from_seconds(1.0, true),
+            damage_flash_timer: Timer::from_seconds(0.6, true),
+            damage_flash_times_per_hit: 5,
         })
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
@@ -82,13 +80,16 @@ fn enemy_movement(
     const TOLERANCE: f32 = 1.0;
     if let Ok(player) = player.get_single() {
         for (enemy, mut stage, mut transform) in &mut enemy {
-            let player_dir = (player.translation - transform.translation).normalize();
-            let target = player.translation - player_dir * enemy.target_offset;
-            let direction = target - transform.translation;
-            if direction.length_squared() > TOLERANCE {
-                transform.translation += direction.normalize() * enemy.speed * time.delta_seconds();
-            } else if matches!(*stage, AiStage::GetInRange) {
-                *stage = AiStage::Charge(Timer::from_seconds(enemy.charge_time, false));
+            if matches!(*stage, AiStage::GetInRange) {
+                let player_dir = (player.translation - transform.translation).normalize();
+                let target = player.translation - player_dir * enemy.target_offset;
+                let direction = target - transform.translation;
+                if direction.length_squared() > TOLERANCE {
+                    transform.translation +=
+                        direction.normalize() * enemy.speed * time.delta_seconds();
+                } else {
+                    *stage = AiStage::Charge(Timer::from_seconds(enemy.charge_time, false));
+                }
             }
         }
     }

@@ -3,9 +3,10 @@ use crate::prelude::*;
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Health {
-    pub health: usize,
+    pub health: isize,
     pub flashing: bool,
     pub damage_flash_timer: Timer,
+    pub damage_flash_times_per_hit: usize,
 }
 
 pub struct HealthPlugin;
@@ -14,7 +15,30 @@ impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Health>()
             .add_system(sword_collision)
+            .add_system_to_stage(CoreStage::PostUpdate, damage_flash)
             .add_system(enemy_collision);
+    }
+}
+
+fn damage_flash(mut health: Query<(&mut Health, &mut TextureAtlasSprite)>, time: Res<Time>) {
+    for (mut health, mut sprite) in &mut health {
+        if health.flashing {
+            health.damage_flash_timer.tick(time.delta());
+            let flash = (health.damage_flash_timer.percent()
+                * health.damage_flash_times_per_hit as f32)
+                .fract();
+
+            if flash < 0.5 {
+                sprite.color.set_a(0.0);
+            } else {
+                sprite.color.set_a(1.0);
+            }
+
+            if health.damage_flash_timer.just_finished() {
+                health.flashing = false;
+                sprite.color.set_a(1.0);
+            }
+        }
     }
 }
 

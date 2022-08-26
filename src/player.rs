@@ -33,7 +33,8 @@ impl Plugin for PlayerPlugin {
         app.register_type::<Player>()
             .register_type::<Sword>()
             .add_system(player_movement)
-            .add_system(sword_swing)
+            .add_system_to_stage(CoreStage::PostUpdate, sword_swing)
+            //.add_system_set(SystemSet::on_update(GameState::Main).with_system(sword_swing))
             .add_system(player_dodge_roll)
             .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_player));
     }
@@ -67,9 +68,13 @@ fn sword_swing(
                         player.swing_direction + player.swing_radius * player.swing_timer.percent(),
                     );
                 }
-            //Otherwise match mouse angle with a bit of an offset and record it
+                //Otherwise match mouse angle with a bit of an offset and record it
+                //}
             } else if let Ok((mut transform, global)) = transforms.get_mut(*child) {
-                let direction = **mouse - global.translation().truncate();
+                let mut direction = **mouse - global.translation().truncate();
+                if direction == Vec2::ZERO {
+                    direction = Vec2::splat(0.001);
+                }
                 player.swing_direction =
                     -player.swing_radius / 2.0 - direction.angle_between(Vec2::Y);
                 transform.rotation = Quat::from_axis_angle(Vec3::Z, player.swing_direction);
@@ -169,6 +174,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             health: 3,
             flashing: false,
             damage_flash_timer: Timer::from_seconds(1.0, true),
+            damage_flash_times_per_hit: 5,
         })
         .insert_bundle(InputManagerBundle::<Action> {
             input_map: controls.input.clone(),
