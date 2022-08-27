@@ -24,4 +24,5 @@ pub enum PhysicLayer {
     Player,
     Sword,
     Enemy,
+    Ingredients,
 }

@@ -52,7 +52,14 @@ fn sword_collision(
     for event in collision_events.iter() {
         if let CollisionEvent::Started(d1, d2) = event {
             if sword.contains(d1.rigid_body_entity()) {
-                unreachable!("I hope physics doesn't work this way");
+                //ugh
+                if let Ok(mut health) = enemies.get_mut(d2.rigid_body_entity()) {
+                    let sword = sword.get(d1.rigid_body_entity()).unwrap();
+                    if sword.active && !health.flashing {
+                        health.flashing = true;
+                        health.health -= sword.damage;
+                    }
+                }
             }
             if sword.contains(d2.rigid_body_entity()) {
                 if let Ok(mut health) = enemies.get_mut(d1.rigid_body_entity()) {

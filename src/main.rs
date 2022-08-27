@@ -1,7 +1,7 @@
 use bevy::window::PresentMode;
 use bevy_asset_loader::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
-use prelude::{health::HealthPlugin, *};
+use prelude::{health::HealthPlugin, inventory::InventoryPlugin, *};
 
 pub const HEIGHT: f32 = 900.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
@@ -37,6 +37,16 @@ pub struct GameAssets {
     ))]
     #[asset(path = "awesome.png")]
     enemy: Handle<TextureAtlas>,
+    #[asset(texture_atlas(
+        tile_size_x = 512.,
+        tile_size_y = 512.,
+        columns = 1,
+        rows = 1,
+        padding_x = 0.,
+        padding_y = 0.
+    ))]
+    #[asset(path = "awesome.png")]
+    drops: Handle<TextureAtlas>,
 }
 
 fn main() {
@@ -68,6 +78,7 @@ fn main() {
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
         .add_plugin(HealthPlugin)
+        .add_plugin(InventoryPlugin)
         //One off weird systems
         .add_startup_system(spawn_camera)
         .insert_resource(MousePos::default())

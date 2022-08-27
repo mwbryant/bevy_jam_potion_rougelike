@@ -1,6 +1,6 @@
 use std::{f32::consts::PI, time::Duration};
 
-use crate::prelude::*;
+use crate::{inventory::Inventory, prelude::*};
 use leafwing_input_manager::{prelude::ActionState, InputManagerBundle};
 
 pub struct PlayerPlugin;
@@ -187,6 +187,9 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             texture_atlas: assets.player.clone(),
             transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(100.)),
             ..default()
+        })
+        .insert(Inventory {
+            items: Vec::default(),
         })
         .insert(Player {
             speed: 200.0,

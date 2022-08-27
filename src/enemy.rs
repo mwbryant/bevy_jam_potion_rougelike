@@ -36,16 +36,18 @@ impl Plugin for EnemyPlugin {
             .register_type::<AiStage>()
             .add_system(enemy_movement)
             .add_system(enemy_attack)
-            .add_system(enemies_die)
+            // on update because it depends on the game assets being loaded
+            .add_system_set(SystemSet::on_update(GameState::Main).with_system(enemies_die))
             .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_enemy));
     }
 }
 fn enemies_die(
     mut commands: Commands,
-    mut enemy: Query<(Entity, &Health, &Ingredient, &mut AiStage), With<Enemy>>,
+    mut enemy: Query<(Entity, &Health, &Ingredient, &GlobalTransform, &mut AiStage), With<Enemy>>,
     time: Res<Time>,
+    assets: Res<GameAssets>,
 ) {
-    for (ent, health, drop, mut ai_stage) in &mut enemy {
+    for (ent, health, drop, transform, mut ai_stage) in &mut enemy {
         if health.health <= 0.0 && !matches!(*ai_stage, AiStage::Dieing(..)) {
             *ai_stage = AiStage::Dieing(Timer::from_seconds(0.5, false));
         }
@@ -53,7 +55,7 @@ fn enemies_die(
             timer.tick(time.delta());
             if timer.just_finished() {
                 commands.entity(ent).despawn_recursive();
-                spawn_drop(&mut commands, drop.clone());
+                spawn_drop(&mut commands, *drop, transform.translation(), &assets);
             }
             //ugh
             *ai_stage = AiStage::Dieing(timer);
