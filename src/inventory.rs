@@ -9,8 +9,35 @@ pub struct InventoryPlugin;
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(player_pickup_ingredient);
+        app.add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_inventory_ui))
+            .add_system(player_pickup_ingredient);
     }
+}
+
+fn spawn_inventory_ui(mut commands: Commands, assets: Res<GameAssets>) {
+    commands
+        .spawn_bundle(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                justify_content: JustifyContent::FlexEnd,
+                ..default()
+            },
+            color: Color::NONE.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            // right vertical fill
+            parent.spawn_bundle(NodeBundle {
+                style: Style {
+                    align_self: AlignSelf::Center,
+                    margin: UiRect::all(Val::Px(20.0)),
+                    size: Size::new(Val::Px(200.0), Val::Percent(70.0)),
+                    ..default()
+                },
+                color: Color::rgb(0.95, 0.15, 0.15).into(),
+                ..default()
+            });
+        });
 }
 
 fn player_pickup_ingredient(

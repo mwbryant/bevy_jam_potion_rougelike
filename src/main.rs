@@ -90,6 +90,7 @@ fn main() {
 fn spawn_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
 }
+
 fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {
     commands
         .spawn_bundle(SpriteSheetBundle {
@@ -98,7 +99,7 @@ fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {
                 ..default()
             },
             texture_atlas: assets.player.clone(),
-            transform: Transform::from_xyz(-300.0, 0.0, 0.0)
+            transform: Transform::from_xyz(-800.0, 0.0, 0.0)
                 .with_scale(Vec3::new(100., 1100., 1.0)),
             ..default()
         })
