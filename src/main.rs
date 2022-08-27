@@ -8,7 +8,9 @@ pub const RESOLUTION: f32 = 16.0 / 9.0;
 
 mod enemy;
 mod health;
+mod ingredients;
 mod input;
+mod inventory;
 mod mouse;
 mod player;
 mod prelude;
@@ -70,9 +72,30 @@ fn main() {
         .add_startup_system(spawn_camera)
         .insert_resource(MousePos::default())
         .add_system(mouse_position)
+        .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_temp_walls))
         .run();
 }
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
+}
+fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {
+    commands
+        .spawn_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                color: Color::GRAY,
+                ..default()
+            },
+            texture_atlas: assets.player.clone(),
+            transform: Transform::from_xyz(-300.0, 0.0, 0.0)
+                .with_scale(Vec3::new(100., 1100., 1.0)),
+            ..default()
+        })
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec2::new(50.0, 550.0).extend(1.0),
+            border_radius: None,
+        })
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World))
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Static);
 }

@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Health {
-    pub health: isize,
+    pub health: f32,
     pub flashing: bool,
     pub damage_flash_timer: Timer,
     pub damage_flash_times_per_hit: usize,
@@ -46,7 +46,7 @@ fn damage_flash(mut health: Query<(&mut Health, &mut TextureAtlasSprite)>, time:
 fn sword_collision(
     mut collision_events: EventReader<CollisionEvent>,
     //Gross
-    sword: Query<(), With<Sword>>,
+    sword: Query<&Sword>,
     mut enemies: Query<&mut Health, With<Enemy>>,
 ) {
     for event in collision_events.iter() {
@@ -56,9 +56,10 @@ fn sword_collision(
             }
             if sword.contains(d2.rigid_body_entity()) {
                 if let Ok(mut health) = enemies.get_mut(d1.rigid_body_entity()) {
-                    if !health.flashing {
+                    let sword = sword.get(d2.rigid_body_entity()).unwrap();
+                    if sword.active && !health.flashing {
                         health.flashing = true;
-                        health.health -= 1;
+                        health.health -= sword.damage;
                     }
                 }
             }
@@ -78,7 +79,7 @@ fn enemy_collision(
                 if let Ok(mut health) = players.get_mut(d2.rigid_body_entity()) {
                     if !health.flashing && matches!(stage, AiStage::Attack(..)) {
                         health.flashing = true;
-                        health.health -= 1;
+                        health.health -= 1.;
                     }
                 }
             }
@@ -88,7 +89,7 @@ fn enemy_collision(
                 if let Ok(mut health) = players.get_mut(d1.rigid_body_entity()) {
                     if !health.flashing && matches!(stage, AiStage::Attack(..)) {
                         health.flashing = true;
-                        health.health -= 1;
+                        health.health -= 1.;
                     }
                 }
             }

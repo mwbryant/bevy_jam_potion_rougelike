@@ -22,7 +22,8 @@ pub struct Player {
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Sword {
-    damage: f32,
+    pub active: bool,
+    pub damage: f32,
 }
 
 #[derive(Component)]
@@ -33,10 +34,39 @@ impl Plugin for PlayerPlugin {
         app.register_type::<Player>()
             .register_type::<Sword>()
             .add_system(player_movement)
-            .add_system_to_stage(CoreStage::PostUpdate, sword_swing)
-            //.add_system_set(SystemSet::on_update(GameState::Main).with_system(sword_swing))
+            .add_system(sword_swing)
+            .add_system(sword_updating)
             .add_system(player_dodge_roll)
+            .add_system(player_hitbox_updating)
             .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_player));
+    }
+}
+
+fn player_hitbox_updating(mut player: Query<(&Player, &mut CollisionLayers, &mut RigidBody)>) {
+    if let Ok((player, mut collision, mut _rigid)) = player.get_single_mut() {
+        if player.rolling {
+            *collision = CollisionLayers::all_masks::<PhysicLayer>()
+                .without_mask(PhysicLayer::Enemy)
+                .with_group(PhysicLayer::Player);
+        //*rigid = RigidBody::KinematicPositionBased;
+        } else {
+            *collision =
+                CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Player);
+            //*rigid = (RigidBody::Dynamic);
+        }
+    }
+}
+
+fn sword_updating(player: Query<&Player>, mut sword: Query<(&mut Sword, &mut Visibility)>) {
+    if let Ok(player) = player.get_single() {
+        let (mut sword, mut sprite) = sword.single_mut();
+        if player.swinging {
+            sword.active = true;
+            sprite.is_visible = true;
+        } else {
+            sword.active = false;
+            sprite.is_visible = false;
+        }
     }
 }
 
@@ -68,8 +98,7 @@ fn sword_swing(
                         player.swing_direction + player.swing_radius * player.swing_timer.percent(),
                     );
                 }
-                //Otherwise match mouse angle with a bit of an offset and record it
-                //}
+            //Otherwise match mouse angle with a bit of an offset and record it
             } else if let Ok((mut transform, global)) = transforms.get_mut(*child) {
                 let mut direction = **mouse - global.translation().truncate();
                 if direction == Vec2::ZERO {
@@ -171,7 +200,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             swing_timer: Timer::from_seconds(0.15, true),
         })
         .insert(Health {
-            health: 3,
+            health: 3.,
             flashing: false,
             damage_flash_timer: Timer::from_seconds(1.0, true),
             damage_flash_times_per_hit: 5,
@@ -188,6 +217,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Player))
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
+        .insert(Damping::from_linear(20.5).with_angular(0.2))
         .with_children(|commands| {
             commands
                 .spawn_bundle(SpatialBundle::default())
@@ -215,7 +245,10 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                             CollisionLayers::all_masks::<PhysicLayer>()
                                 .with_group(PhysicLayer::Sword),
                         )
-                        .insert(Sword { damage: 10.0 })
+                        .insert(Sword {
+                            active: false,
+                            damage: 10.0,
+                        })
                         .insert(Name::new("Sword"));
                 });
         });

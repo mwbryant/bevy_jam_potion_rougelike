@@ -26,6 +26,7 @@ pub enum AiStage {
     Charge(Timer),
     Attack(Timer),
     CoolDown(Timer),
+    Dieing(Timer),
 }
 
 impl Plugin for EnemyPlugin {
@@ -35,11 +36,61 @@ impl Plugin for EnemyPlugin {
             .register_type::<AiStage>()
             .add_system(enemy_movement)
             .add_system(enemy_attack)
+            .add_system(enemies_die)
             .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_enemy));
+    }
+}
+fn enemies_die(
+    mut commands: Commands,
+    mut enemy: Query<(Entity, &Health, &Ingredient, &mut AiStage), With<Enemy>>,
+    time: Res<Time>,
+) {
+    for (ent, health, drop, mut ai_stage) in &mut enemy {
+        if health.health <= 0.0 && !matches!(*ai_stage, AiStage::Dieing(..)) {
+            *ai_stage = AiStage::Dieing(Timer::from_seconds(0.5, false));
+        }
+        if let AiStage::Dieing(mut timer) = ai_stage.clone() {
+            timer.tick(time.delta());
+            if timer.just_finished() {
+                commands.entity(ent).despawn_recursive();
+                spawn_drop(&mut commands, drop.clone());
+            }
+            //ugh
+            *ai_stage = AiStage::Dieing(timer);
+        }
     }
 }
 
 fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
+    commands
+        .spawn_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite { ..default() },
+            texture_atlas: assets.enemy.clone(),
+            transform: Transform::from_xyz(-200.0, -100.0, 0.0).with_scale(Vec3::splat(0.2)),
+            ..default()
+        })
+        .insert(Enemy {
+            speed: 40.0,
+            attack_speed: 450.0,
+            target_offset: 150.0,
+            charge_time: 1.0,
+            attack_time: 0.4,
+            cooldown_time: 0.5,
+        })
+        .insert(Health {
+            health: 30.,
+            flashing: false,
+            damage_flash_timer: Timer::from_seconds(0.6, true),
+            damage_flash_times_per_hit: 5,
+        })
+        .insert(Ingredient::FrogEyes)
+        .insert(CollisionShape::Sphere { radius: 50.0 })
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Dynamic)
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
+        .insert(Damping::from_linear(10.5).with_angular(0.2))
+        .insert(AiStage::GetInRange)
+        .insert(Name::new("Enemy"));
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite { ..default() },
@@ -55,18 +106,17 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
             attack_time: 0.4,
             cooldown_time: 0.5,
         })
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec2::new(50.0, 50.0).extend(1.0),
-            border_radius: None,
-        })
+        .insert(CollisionShape::Sphere { radius: 50.0 })
         .insert(Health {
-            health: 3,
+            health: 30.,
             flashing: false,
             damage_flash_timer: Timer::from_seconds(0.6, true),
             damage_flash_times_per_hit: 5,
         })
+        .insert(Ingredient::FrogEyes)
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
+        .insert(Damping::from_linear(10.5).with_angular(0.2))
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
         .insert(AiStage::GetInRange)
         .insert(Name::new("Enemy"));
@@ -112,7 +162,7 @@ fn enemy_attack(
         for (enemy, mut stage, mut transform, mut sprite) in &mut enemy {
             //clone here to make rust happy, idk why
             match stage.clone() {
-                AiStage::GetInRange => continue,
+                AiStage::GetInRange | AiStage::Dieing(..) => continue,
                 AiStage::Charge(mut timer) => {
                     sprite.color = Color::rgb(1.0, timer.percent_left(), timer.percent_left());
 
