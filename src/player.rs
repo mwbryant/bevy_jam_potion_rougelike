@@ -1,6 +1,7 @@
 use std::{f32::consts::PI, time::Duration};
 
 use crate::{inventory::Inventory, prelude::*};
+use bevy::utils::HashMap;
 use leafwing_input_manager::{prelude::ActionState, InputManagerBundle};
 
 pub struct PlayerPlugin;
@@ -189,7 +190,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             ..default()
         })
         .insert(Inventory {
-            items: Vec::default(),
+            items: HashMap::default(),
         })
         .insert(Player {
             speed: 200.0,

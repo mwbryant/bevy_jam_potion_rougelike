@@ -1,10 +1,11 @@
+use bevy::utils::HashMap;
 use strum::IntoEnumIterator;
 
 use crate::prelude::*;
 
 #[derive(Component)]
 pub struct Inventory {
-    pub items: Vec<Ingredient>,
+    pub items: HashMap<Ingredient, usize>,
 }
 
 pub struct InventoryPlugin;
@@ -12,13 +13,32 @@ pub struct InventoryPlugin;
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_inventory_ui))
+            .add_system(update_inventory_ui)
             .add_system(player_pickup_ingredient);
+    }
+}
+
+fn update_inventory_ui(
+    buttons: Query<(&Children, &Ingredient), With<Button>>,
+    mut text: Query<&mut Text>,
+    inventory: Query<&Inventory, With<Player>>,
+) {
+    if let Ok(inventory) = inventory.get_single() {
+        for (children, ingredient) in &buttons {
+            for child in children {
+                if let Ok(mut text) = text.get_mut(*child) {
+                    let count = inventory.items.get(ingredient).unwrap_or(&0);
+                    *text =
+                        Text::from_section(format!("{}", count), text.sections[0].style.clone());
+                }
+            }
+        }
     }
 }
 
 fn spawn_inventory_ui(
     mut commands: Commands,
-    assets: Res<GameAssets>,
+    _assets: Res<GameAssets>,
     asset_server: Res<AssetServer>,
 ) {
     commands
@@ -74,7 +94,7 @@ fn spawn_inventory_ui(
                                         },
                                     ),
                                     style: Style {
-                                        margin: UiRect::all(Val::Px(5.0)),
+                                        margin: UiRect::all(Val::Px(10.0)),
                                         ..default()
                                     },
                                     ..default()
@@ -96,7 +116,12 @@ fn player_pickup_ingredient(
             if let Ok(mut inventory) = player.get_mut(d1.rigid_body_entity()) {
                 if let Ok((ent, ingredients)) = drops.get_mut(d2.rigid_body_entity()) {
                     commands.entity(ent).despawn_recursive();
-                    inventory.items.push(*ingredients);
+                    if inventory.items.contains_key(ingredients) {
+                        let count = inventory.items[ingredients] + 1;
+                        inventory.items.insert(*ingredients, count);
+                    } else {
+                        inventory.items.insert(*ingredients, 1);
+                    }
                 }
             }
         }
