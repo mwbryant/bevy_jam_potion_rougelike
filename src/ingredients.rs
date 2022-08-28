@@ -1,6 +1,8 @@
+use strum_macros::EnumIter;
+
 use crate::prelude::*;
 
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, EnumIter)]
 pub enum Ingredient {
     FrogEyes,
     BatWings,

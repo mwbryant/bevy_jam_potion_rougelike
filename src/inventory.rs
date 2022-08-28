@@ -1,3 +1,5 @@
+use strum::IntoEnumIterator;
+
 use crate::prelude::*;
 
 #[derive(Component)]
@@ -14,7 +16,11 @@ impl Plugin for InventoryPlugin {
     }
 }
 
-fn spawn_inventory_ui(mut commands: Commands, assets: Res<GameAssets>) {
+fn spawn_inventory_ui(
+    mut commands: Commands,
+    assets: Res<GameAssets>,
+    asset_server: Res<AssetServer>,
+) {
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
@@ -27,16 +33,55 @@ fn spawn_inventory_ui(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .with_children(|parent| {
             // right vertical fill
-            parent.spawn_bundle(NodeBundle {
-                style: Style {
-                    align_self: AlignSelf::Center,
-                    margin: UiRect::all(Val::Px(20.0)),
-                    size: Size::new(Val::Px(200.0), Val::Percent(70.0)),
+            parent
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        align_self: AlignSelf::Center,
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::FlexStart,
+                        margin: UiRect::all(Val::Px(20.0)),
+                        //size: Size::new(Val::Px(200.0), Val::Percent(70.0)),
+                        ..default()
+                    },
+                    color: Color::rgb(0.95, 0.15, 0.15).into(),
                     ..default()
-                },
-                color: Color::rgb(0.95, 0.15, 0.15).into(),
-                ..default()
-            });
+                })
+                //Item buttons
+                .with_children(|parent| {
+                    for ingredient in Ingredient::iter() {
+                        parent
+                            .spawn_bundle(ButtonBundle {
+                                style: Style {
+                                    flex_direction: FlexDirection::RowReverse,
+                                    align_items: AlignItems::FlexStart,
+                                    size: Size::new(Val::Px(164.0), Val::Px(164.0)),
+                                    margin: UiRect::all(Val::Px(20.0)),
+                                    ..default()
+                                },
+                                color: Color::rgb(0.5, 0.6, 0.9).into(),
+                                ..default() //Count text
+                            })
+                            .insert(ingredient)
+                            .with_children(|parent| {
+                                parent.spawn_bundle(TextBundle {
+                                    text: Text::from_section(
+                                        "0",
+                                        TextStyle {
+                                            font: asset_server
+                                                .load("Font/DancingScript-VariableFont_wght.ttf"),
+                                            font_size: 36.0,
+                                            color: Color::BLACK,
+                                        },
+                                    ),
+                                    style: Style {
+                                        margin: UiRect::all(Val::Px(5.0)),
+                                        ..default()
+                                    },
+                                    ..default()
+                                });
+                            });
+                    }
+                });
         });
 }
 
