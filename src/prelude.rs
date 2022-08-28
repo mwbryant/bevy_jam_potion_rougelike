@@ -1,11 +1,13 @@
 pub use bevy::prelude::*;
 
+pub use crate::animation::*;
 pub use crate::enemy::*;
 pub use crate::health::*;
 pub use crate::ingredients::*;
 pub use crate::ingredients::*;
 pub use crate::input::*;
 pub use crate::mouse::*;
+pub use crate::music::*;
 pub use crate::player::*;
 pub use crate::*;
 

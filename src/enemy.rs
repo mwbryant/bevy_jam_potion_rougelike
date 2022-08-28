@@ -10,7 +10,14 @@ pub struct Enemy {
     target_offset: f32,
     charge_time: f32,
     attack_time: f32,
+    wait_time: f32,
+    jump_time: f32,
     cooldown_time: f32,
+}
+
+#[derive(Component)]
+pub enum EnemyType {
+    Frog,
 }
 
 //TODO should state transistions be impled on this or just let systems set it willy nilly
@@ -23,6 +30,8 @@ pub enum AiStage {
     //Originally MoveToward but that was misleading because the AI always moves toward the player
     #[default]
     GetInRange,
+    Wait(Timer),
+    Jumping(Timer),
     Charge(Timer),
     Attack(Timer),
     CoolDown(Timer),
@@ -36,6 +45,7 @@ impl Plugin for EnemyPlugin {
             .register_type::<AiStage>()
             .add_system(enemy_movement)
             .add_system(enemy_attack)
+            .add_system(enemy_hitbox_disable)
             // on update because it depends on the game assets being loaded
             .add_system_set(SystemSet::on_update(GameState::Main).with_system(enemies_die))
             .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_enemy));
@@ -49,7 +59,7 @@ fn enemies_die(
 ) {
     for (ent, health, drop, transform, mut ai_stage) in &mut enemy {
         if health.health <= 0.0 && !matches!(*ai_stage, AiStage::Dieing(..)) {
-            *ai_stage = AiStage::Dieing(Timer::from_seconds(0.5, false));
+            *ai_stage = AiStage::Dieing(Timer::from_seconds(1.0, false));
         }
         if let AiStage::Dieing(mut timer) = ai_stage.clone() {
             timer.tick(time.delta());
@@ -67,16 +77,18 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite { ..default() },
-            texture_atlas: assets.enemy.clone(),
-            transform: Transform::from_xyz(-200.0, -100.0, 0.0).with_scale(Vec3::splat(0.2)),
+            texture_atlas: assets.frog.clone(),
+            transform: Transform::from_xyz(-200.0, -100.0, 100.0).with_scale(Vec3::splat(2.0)),
             ..default()
         })
         .insert(Enemy {
-            speed: 40.0,
+            speed: 140.0,
             attack_speed: 450.0,
             target_offset: 150.0,
             charge_time: 1.0,
             attack_time: 0.4,
+            wait_time: 0.8,
+            jump_time: 0.4,
             cooldown_time: 0.5,
         })
         .insert(Health {
@@ -85,42 +97,18 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
             damage_flash_timer: Timer::from_seconds(0.6, true),
             damage_flash_times_per_hit: 5,
         })
+        .insert(EnemyType::Frog)
+        .insert(Animation {
+            current_frame: 0,
+            timer: Timer::from_seconds(0.35, true),
+        })
         .insert(Ingredient::FrogEyes)
-        .insert(CollisionShape::Sphere { radius: 50.0 })
+        .insert(CollisionShape::Sphere { radius: 40.0 })
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
         .insert(Damping::from_linear(10.5).with_angular(0.2))
-        .insert(AiStage::GetInRange)
-        .insert(Name::new("Enemy"));
-    commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite { ..default() },
-            texture_atlas: assets.enemy.clone(),
-            transform: Transform::from_xyz(200.0, 200.0, 0.0).with_scale(Vec3::splat(0.2)),
-            ..default()
-        })
-        .insert(Enemy {
-            speed: 40.0,
-            attack_speed: 450.0,
-            target_offset: 150.0,
-            charge_time: 1.0,
-            attack_time: 0.4,
-            cooldown_time: 0.5,
-        })
-        .insert(CollisionShape::Sphere { radius: 50.0 })
-        .insert(Health {
-            health: 30.,
-            flashing: false,
-            damage_flash_timer: Timer::from_seconds(0.6, true),
-            damage_flash_times_per_hit: 5,
-        })
-        .insert(Ingredient::FrogEyes)
-        .insert(RotationConstraints::lock())
-        .insert(RigidBody::Dynamic)
-        .insert(Damping::from_linear(10.5).with_angular(0.2))
-        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
-        .insert(AiStage::GetInRange)
+        .insert(AiStage::Wait(Timer::from_seconds(0.8, false)))
         .insert(Name::new("Enemy"));
 }
 
@@ -132,6 +120,7 @@ fn enemy_movement(
     const TOLERANCE: f32 = 1.0;
     if let Ok(player) = player.get_single() {
         for (enemy, mut stage, mut transform) in &mut enemy {
+            //normal movement
             if matches!(*stage, AiStage::GetInRange) {
                 let player_dir = (player.translation - transform.translation).normalize();
                 let target = player.translation - player_dir * enemy.target_offset;
@@ -139,6 +128,32 @@ fn enemy_movement(
                 if direction.length_squared() > TOLERANCE {
                     transform.translation +=
                         direction.normalize() * enemy.speed * time.delta_seconds();
+                } else {
+                    *stage = AiStage::Charge(Timer::from_seconds(enemy.charge_time, false));
+                }
+            }
+            //Frog movement
+            if let AiStage::Wait(mut timer) = stage.clone() {
+                timer.tick(time.delta());
+                if timer.just_finished() {
+                    *stage = AiStage::Jumping(Timer::from_seconds(enemy.jump_time, false));
+                } else {
+                    *stage = AiStage::Wait(timer.clone());
+                }
+            }
+            if let AiStage::Jumping(mut timer) = stage.clone() {
+                let player_dir = (player.translation - transform.translation).normalize();
+                let target = player.translation - player_dir * enemy.target_offset;
+                let direction = target - transform.translation;
+                if direction.length_squared() > TOLERANCE {
+                    transform.translation +=
+                        direction.normalize() * enemy.speed * time.delta_seconds();
+                    timer.tick(time.delta());
+                    if timer.just_finished() {
+                        *stage = AiStage::Wait(Timer::from_seconds(enemy.wait_time, false));
+                    } else {
+                        *stage = AiStage::Jumping(timer.clone());
+                    }
                 } else {
                     *stage = AiStage::Charge(Timer::from_seconds(enemy.charge_time, false));
                 }
@@ -151,6 +166,7 @@ fn enemy_attack(
     mut enemy: Query<
         (
             &Enemy,
+            &EnemyType,
             &mut AiStage,
             &mut Transform,
             &mut TextureAtlasSprite,
@@ -161,10 +177,13 @@ fn enemy_attack(
     time: Res<Time>,
 ) {
     if let Ok(player) = player.get_single() {
-        for (enemy, mut stage, mut transform, mut sprite) in &mut enemy {
+        for (enemy, enemy_type, mut stage, mut transform, mut sprite) in &mut enemy {
             //clone here to make rust happy, idk why
             match stage.clone() {
-                AiStage::GetInRange | AiStage::Dieing(..) => continue,
+                AiStage::GetInRange
+                | AiStage::Dieing(..)
+                | AiStage::Jumping(..)
+                | AiStage::Wait(..) => continue,
                 AiStage::Charge(mut timer) => {
                     sprite.color = Color::rgb(1.0, timer.percent_left(), timer.percent_left());
 
@@ -186,21 +205,42 @@ fn enemy_attack(
                         //Why do I need to reset this, rust pls
                         *stage = AiStage::Attack(timer);
                     }
-                    let player_dir = (player.translation - transform.translation).normalize();
+                    let player_dir = (player.translation - transform.translation
+                        + Vec3::new(3.0, 0.0, 0.0))
+                    .normalize();
                     transform.translation +=
                         player_dir.normalize() * enemy.attack_speed * time.delta_seconds();
+                    transform.translation.z = 10.0;
                 }
                 AiStage::CoolDown(mut timer) => {
                     sprite.color = Color::rgb(1.0, timer.percent(), timer.percent());
                     timer.tick(time.delta());
                     if timer.just_finished() {
-                        *stage = AiStage::GetInRange;
+                        if matches!(enemy_type, EnemyType::Frog) {
+                            *stage = AiStage::Wait(Timer::from_seconds(enemy.wait_time, false));
+                        } else {
+                            *stage = AiStage::GetInRange;
+                        }
                     } else {
                         //Why do I need to reset this, rust pls
                         *stage = AiStage::CoolDown(timer);
                     }
                 }
             }
+        }
+    }
+}
+
+fn enemy_hitbox_disable(mut enemy: Query<(&AiStage, &mut CollisionLayers, &mut RigidBody)>) {
+    for (stage, mut collision, mut _rigid) in &mut enemy {
+        if matches!(stage, AiStage::Attack(..)) {
+            *collision = CollisionLayers::all_masks::<PhysicLayer>()
+                .without_mask(PhysicLayer::Player)
+                .with_group(PhysicLayer::Enemy);
+        //*rigid = RigidBody::KinematicPositionBased;
+        } else {
+            *collision = CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy);
+            //*rigid = (RigidBody::Dynamic);
         }
     }
 }

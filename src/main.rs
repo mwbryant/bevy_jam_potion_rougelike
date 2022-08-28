@@ -1,4 +1,4 @@
-use bevy::window::PresentMode;
+use bevy::{render::texture::ImageSettings, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
 use prelude::{health::HealthPlugin, inventory::InventoryPlugin, *};
@@ -6,12 +6,14 @@ use prelude::{health::HealthPlugin, inventory::InventoryPlugin, *};
 pub const HEIGHT: f32 = 900.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
 
+mod animation;
 mod enemy;
 mod health;
 mod ingredients;
 mod input;
 mod inventory;
 mod mouse;
+mod music;
 mod player;
 mod prelude;
 
@@ -28,15 +30,15 @@ pub struct GameAssets {
     #[asset(path = "white_pixel.png")]
     player: Handle<TextureAtlas>,
     #[asset(texture_atlas(
-        tile_size_x = 512.,
-        tile_size_y = 512.,
-        columns = 1,
-        rows = 1,
-        padding_x = 0.,
-        padding_y = 0.
+        tile_size_x = 67.,
+        tile_size_y = 67.,
+        columns = 4,
+        rows = 2,
+        padding_x = 1.,
+        padding_y = 1.
     ))]
-    #[asset(path = "awesome.png")]
-    enemy: Handle<TextureAtlas>,
+    #[asset(path = "Frog.png")]
+    frog: Handle<TextureAtlas>,
     #[asset(texture_atlas(
         tile_size_x = 512.,
         tile_size_y = 512.,
@@ -52,6 +54,7 @@ pub struct GameAssets {
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::hex("b0c060").unwrap()))
+        .insert_resource(ImageSettings::default_nearest())
         .add_state(GameState::Splash)
         .add_loading_state(
             LoadingState::new(GameState::Splash)
@@ -79,6 +82,8 @@ fn main() {
         .add_plugin(EnemyPlugin)
         .add_plugin(HealthPlugin)
         .add_plugin(InventoryPlugin)
+        .add_plugin(AnimationPlugin)
+        .add_plugin(MusicPlugin)
         //One off weird systems
         .add_startup_system(spawn_camera)
         .insert_resource(MousePos::default())
