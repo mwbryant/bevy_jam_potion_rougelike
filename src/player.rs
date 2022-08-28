@@ -186,7 +186,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                 ..default()
             },
             texture_atlas: assets.player.clone(),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(100.)),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(70.)),
             ..default()
         })
         .insert(Inventory {
@@ -215,7 +215,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
         })
         .insert(Name::new("Player"))
         .insert(CollisionShape::Cuboid {
-            half_extends: Vec2::new(50.0, 50.0).extend(1.0),
+            half_extends: Vec2::new(35.0, 35.0).extend(1.0),
             border_radius: None,
         })
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Player))

@@ -56,14 +56,17 @@ fn spawn_inventory_ui(
             parent
                 .spawn_bundle(NodeBundle {
                     style: Style {
-                        align_self: AlignSelf::Center,
+                        align_self: AlignSelf::FlexStart,
                         flex_direction: FlexDirection::Column,
                         justify_content: JustifyContent::FlexStart,
+                        align_content: AlignContent::FlexEnd,
                         margin: UiRect::all(Val::Px(20.0)),
-                        //size: Size::new(Val::Px(200.0), Val::Percent(70.0)),
+                        flex_wrap: FlexWrap::Wrap,
+                        size: Size::new(Val::Px(200.0), Val::Percent(30.0)),
                         ..default()
                     },
-                    color: Color::rgb(0.95, 0.15, 0.15).into(),
+                    color: Color::NONE.into(),
+                    //color: Color::rgb(0.95, 0.15, 0.15).into(),
                     ..default()
                 })
                 //Item buttons
@@ -74,8 +77,8 @@ fn spawn_inventory_ui(
                                 style: Style {
                                     flex_direction: FlexDirection::RowReverse,
                                     align_items: AlignItems::FlexStart,
-                                    size: Size::new(Val::Px(164.0), Val::Px(164.0)),
-                                    margin: UiRect::all(Val::Px(20.0)),
+                                    size: Size::new(Val::Px(2.5 * 32.0), Val::Px(2.5 * 32.0)),
+                                    margin: UiRect::all(Val::Px(10.0)),
                                     ..default()
                                 },
                                 color: Color::rgb(0.5, 0.6, 0.9).into(),
@@ -89,7 +92,7 @@ fn spawn_inventory_ui(
                                         TextStyle {
                                             font: asset_server
                                                 .load("Font/DancingScript-VariableFont_wght.ttf"),
-                                            font_size: 36.0,
+                                            font_size: 16.0,
                                             color: Color::BLACK,
                                         },
                                     ),

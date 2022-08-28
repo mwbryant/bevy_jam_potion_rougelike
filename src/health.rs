@@ -84,7 +84,7 @@ fn enemy_collision(
         if let CollisionEvent::Started(d1, d2) = event {
             if let Ok(stage) = enemies.get(d1.rigid_body_entity()) {
                 if let Ok(mut health) = players.get_mut(d2.rigid_body_entity()) {
-                    if !health.flashing && matches!(stage, AiStage::Attack(..)) {
+                    if !health.flashing && matches!(stage, AiStage::CoolDown(..)) {
                         health.flashing = true;
                         health.health -= 1.;
                     }
@@ -94,7 +94,7 @@ fn enemy_collision(
             //Probably something functional but I can't think of it atm
             if let Ok(stage) = enemies.get(d2.rigid_body_entity()) {
                 if let Ok(mut health) = players.get_mut(d1.rigid_body_entity()) {
-                    if !health.flashing && matches!(stage, AiStage::Attack(..)) {
+                    if !health.flashing && matches!(stage, AiStage::CoolDown(..)) {
                         health.flashing = true;
                         health.health -= 1.;
                     }

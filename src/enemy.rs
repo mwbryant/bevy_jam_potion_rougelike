@@ -18,6 +18,8 @@ pub struct Enemy {
 #[derive(Component)]
 pub enum EnemyType {
     Frog,
+    Bat,
+    Turtle,
 }
 
 //TODO should state transistions be impled on this or just let systems set it willy nilly
@@ -74,11 +76,49 @@ fn enemies_die(
 }
 
 fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
+    //Bat
+    commands
+        .spawn_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite { ..default() },
+            texture_atlas: assets.bat.clone(),
+            transform: Transform::from_xyz(200.0, -150.0, 100.0).with_scale(Vec3::splat(2.5)),
+            ..default()
+        })
+        .insert(Enemy {
+            speed: 40.0,
+            attack_speed: 550.0,
+            target_offset: 350.0,
+            charge_time: 0.5,
+            attack_time: 0.8,
+            wait_time: 0.8,
+            jump_time: 0.4,
+            cooldown_time: 0.5,
+        })
+        .insert(Health {
+            health: 20.,
+            flashing: false,
+            damage_flash_timer: Timer::from_seconds(0.6, true),
+            damage_flash_times_per_hit: 5,
+        })
+        .insert(EnemyType::Bat)
+        .insert(Animation {
+            current_frame: 0,
+            timer: Timer::from_seconds(0.35, true),
+        })
+        .insert(Ingredient::BatWings)
+        .insert(CollisionShape::Sphere { radius: 40.0 })
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Dynamic)
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
+        .insert(Damping::from_linear(10.5).with_angular(0.2))
+        .insert(AiStage::GetInRange)
+        .insert(Name::new("Bat"));
+    //Frog
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite { ..default() },
             texture_atlas: assets.frog.clone(),
-            transform: Transform::from_xyz(-200.0, -100.0, 100.0).with_scale(Vec3::splat(2.0)),
+            transform: Transform::from_xyz(-200.0, -100.0, 100.0).with_scale(Vec3::splat(2.5)),
             ..default()
         })
         .insert(Enemy {
@@ -109,7 +149,7 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
         .insert(Damping::from_linear(10.5).with_angular(0.2))
         .insert(AiStage::Wait(Timer::from_seconds(0.8, false)))
-        .insert(Name::new("Enemy"));
+        .insert(Name::new("Frog"));
 }
 
 fn enemy_movement(

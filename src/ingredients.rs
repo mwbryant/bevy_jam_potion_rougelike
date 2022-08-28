@@ -5,7 +5,11 @@ use crate::prelude::*;
 #[derive(Component, Clone, Copy, EnumIter, Hash, PartialEq, Eq)]
 pub enum Ingredient {
     FrogEyes,
+    FrogLungs,
+    FrogLegs,
     BatWings,
+    BatEyes,
+    BatSomethings,
 }
 
 pub fn spawn_drop(

@@ -3,7 +3,7 @@ use bevy_asset_loader::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
 use prelude::{health::HealthPlugin, inventory::InventoryPlugin, *};
 
-pub const HEIGHT: f32 = 900.;
+pub const HEIGHT: f32 = 700.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
 
 mod animation;
@@ -39,6 +39,16 @@ pub struct GameAssets {
     ))]
     #[asset(path = "Frog.png")]
     frog: Handle<TextureAtlas>,
+    #[asset(texture_atlas(
+        tile_size_x = 70.,
+        tile_size_y = 48.,
+        columns = 8,
+        rows = 1,
+        padding_x = 1.,
+        padding_y = 1.
+    ))]
+    #[asset(path = "Bat.png")]
+    bat: Handle<TextureAtlas>,
     #[asset(texture_atlas(
         tile_size_x = 512.,
         tile_size_y = 512.,
@@ -97,6 +107,7 @@ fn spawn_camera(mut commands: Commands) {
 }
 
 fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {
+    //Left
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite {
@@ -104,12 +115,67 @@ fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {
                 ..default()
             },
             texture_atlas: assets.player.clone(),
-            transform: Transform::from_xyz(-800.0, 0.0, 0.0)
+            transform: Transform::from_xyz(-600.0, 0.0, 0.0)
                 .with_scale(Vec3::new(100., 1100., 1.0)),
             ..default()
         })
         .insert(CollisionShape::Cuboid {
             half_extends: Vec2::new(50.0, 550.0).extend(1.0),
+            border_radius: None,
+        })
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World))
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Static);
+    //Right
+    commands
+        .spawn_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                color: Color::GRAY,
+                ..default()
+            },
+            texture_atlas: assets.player.clone(),
+            transform: Transform::from_xyz(600.0, 0.0, 0.0).with_scale(Vec3::new(100., 1100., 1.0)),
+            ..default()
+        })
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec2::new(50.0, 550.0).extend(1.0),
+            border_radius: None,
+        })
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World))
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Static);
+    //Top
+    commands
+        .spawn_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                color: Color::GRAY,
+                ..default()
+            },
+            texture_atlas: assets.player.clone(),
+            transform: Transform::from_xyz(0.0, 350.0, 0.0).with_scale(Vec3::new(1100., 100., 1.0)),
+            ..default()
+        })
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec2::new(550.0, 50.0).extend(1.0),
+            border_radius: None,
+        })
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World))
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Static);
+    //Bottom
+    commands
+        .spawn_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                color: Color::GRAY,
+                ..default()
+            },
+            texture_atlas: assets.player.clone(),
+            transform: Transform::from_xyz(0.0, -350.0, 0.0)
+                .with_scale(Vec3::new(1100., 100., 1.0)),
+            ..default()
+        })
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec2::new(550.0, 50.0).extend(1.0),
             border_radius: None,
         })
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World))
