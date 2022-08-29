@@ -124,6 +124,7 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
         .insert(Damping::from_linear(10.5).with_angular(0.2))
         .insert(AiStage::GetInRange)
+        .insert(RoomMember)
         .insert(Name::new("Bat"));
     //Frog
     commands
@@ -157,6 +158,7 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
         .insert(*frog_drops.choose(&mut rand::thread_rng()).unwrap())
         .insert(CollisionShape::Sphere { radius: 50.0 })
         .insert(RotationConstraints::lock())
+        .insert(RoomMember)
         .insert(RigidBody::Dynamic)
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
         .insert(Damping::from_linear(10.5).with_angular(0.2))

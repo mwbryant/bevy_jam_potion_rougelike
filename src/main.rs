@@ -177,6 +177,14 @@ fn main() {
         .run();
 }
 
+#[derive(Component, Debug, Clone, Copy)]
+pub enum ExitDirection {
+    North,
+    South,
+    East,
+    West,
+}
+
 fn camera_follows_player(
     player_query: Query<&Transform, With<Player>>,
     mut camera_query: Query<
@@ -222,7 +230,8 @@ fn spawn_room_exits(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World))
         .insert(RotationConstraints::lock())
-        .insert(RigidBody::Static);
+        .insert(ExitDirection::West)
+        .insert(RigidBody::Sensor);
     //Right
     commands
         .spawn_bundle(SpatialBundle {
@@ -235,7 +244,8 @@ fn spawn_room_exits(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World))
         .insert(RotationConstraints::lock())
-        .insert(RigidBody::Static);
+        .insert(ExitDirection::East)
+        .insert(RigidBody::Sensor);
     //Top
     commands
         .spawn_bundle(SpatialBundle {
@@ -248,7 +258,8 @@ fn spawn_room_exits(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World))
         .insert(RotationConstraints::lock())
-        .insert(RigidBody::Static);
+        .insert(ExitDirection::North)
+        .insert(RigidBody::Sensor);
     //Bottom
     commands
         .spawn_bundle(SpatialBundle {
@@ -261,5 +272,6 @@ fn spawn_room_exits(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World))
         .insert(RotationConstraints::lock())
-        .insert(RigidBody::Static);
+        .insert(ExitDirection::South)
+        .insert(RigidBody::Sensor);
 }

@@ -1,17 +1,84 @@
 use crate::prelude::*;
 
 pub struct MapPlugin;
+
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(create_map)
-            .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_room));
+            .add_event::<ExitEvent>()
+            .add_system(exit_collision)
+            .add_system_set(SystemSet::on_update(GameState::Main).with_system(load_next_room))
+            .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_start_room));
     }
 }
+
+pub struct ExitEvent(ExitDirection);
+
+#[derive(Component)]
+pub struct RoomMember;
 
 pub struct MapDesc {
     x: usize,
     y: usize,
     map: Vec<Vec<MapTile>>,
+}
+
+fn load_next_room(
+    mut commands: Commands,
+    to_despawn: Query<Entity, With<RoomMember>>,
+    mut event: EventReader<ExitEvent>,
+    assets: Res<BackgroundAssets>,
+    images: Res<Assets<Image>>,
+    mut player: Query<&mut Transform, With<Player>>,
+    mut map: ResMut<MapDesc>,
+) {
+    for event in event.iter() {
+        for ent in &to_despawn {
+            commands.entity(ent).despawn_recursive();
+        }
+        match event.0 {
+            ExitDirection::North => map.y += 1,
+            ExitDirection::South => map.y -= 1,
+            ExitDirection::East => map.x += 1,
+            ExitDirection::West => map.x -= 1,
+        }
+        spawn_room(&mut commands, &assets, &images, &map);
+        let mut player = player.single_mut();
+        let bounds = 28.0 * 0.8 * 64.0;
+        match event.0 {
+            ExitDirection::North => player.translation.y = -bounds,
+            ExitDirection::South => player.translation.y = bounds,
+            ExitDirection::East => player.translation.x = -bounds,
+            ExitDirection::West => player.translation.x = bounds,
+        }
+    }
+}
+
+fn exit_collision(
+    mut collision_events: EventReader<CollisionEvent>,
+    exits: Query<&ExitDirection>,
+    player: Query<(), With<Player>>,
+    mut events: EventWriter<ExitEvent>,
+) {
+    for event in collision_events.iter() {
+        if let CollisionEvent::Started(d1, d2) = event {
+            if exits.contains(d1.rigid_body_entity()) {
+                //ugh
+                if let Ok(dir) = exits.get(d1.rigid_body_entity()) {
+                    if let Ok(()) = player.get(d2.rigid_body_entity()) {
+                        events.send(ExitEvent(*dir));
+                    }
+                }
+            }
+            if exits.contains(d2.rigid_body_entity()) {
+                if let Ok(dir) = exits.get(d2.rigid_body_entity()) {
+                    if let Ok(()) = player.get(d1.rigid_body_entity()) {
+                        events.send(ExitEvent(*dir));
+                    }
+                }
+            }
+        }
+    }
 }
 
 pub fn create_map(mut commands: Commands) {
@@ -24,13 +91,23 @@ pub fn create_map(mut commands: Commands) {
     let map = map.unwrap();
     commands.insert_resource(MapDesc { x: 0, y: 0, map });
 }
-fn spawn_room(
+fn spawn_start_room(
     mut commands: Commands,
     assets: Res<BackgroundAssets>,
     images: Res<Assets<Image>>,
     map: Res<MapDesc>,
 ) {
-    let room = map.map[map.x][map.y];
+    spawn_room(&mut commands, &assets, &images, &map);
+}
+
+fn spawn_room(
+    commands: &mut Commands,
+    assets: &Res<BackgroundAssets>,
+    images: &Res<Assets<Image>>,
+    map: &MapDesc,
+) {
+    let room = map.map[map.y][map.x];
+    println!("Loading {:?}", room);
     let image = match room {
         MapTile::NPipe => images.get(&assets.npipe.clone()).unwrap(),
         MapTile::EPipe => images.get(&assets.epipe.clone()).unwrap(),
@@ -83,6 +160,7 @@ fn spawn_room(
                     .with_scale(Vec3::splat(pixel_size)),
                     ..default()
                 })
+                .insert(RoomMember)
                 .id();
             if index == 1 {
                 commands

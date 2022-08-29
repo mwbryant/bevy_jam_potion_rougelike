@@ -250,5 +250,6 @@ pub fn generate_map(
 
     grid.full_collapse(collapse_map_geometry, (&table.0, &table.1));
 
+    grid.print_grid();
     grid.render()
 }
