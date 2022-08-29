@@ -54,7 +54,7 @@ pub fn spawn_drop(
             ..default()
         })
         .insert(to_spawn)
-        .insert(CollisionShape::Sphere { radius: 20.0 })
+        .insert(CollisionShape::Sphere { radius: 30.0 })
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Sensor)
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Ingredients))

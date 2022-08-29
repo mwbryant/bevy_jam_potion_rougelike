@@ -308,7 +308,7 @@ fn spawn_room(
         0.0,
     );
 
-    println!("{}", frogs_to_check.len());
+    let mut ids = Vec::default();
     for y in 0..height {
         for x in 0..width {
             let index = 4 * (x + y * width);
@@ -332,6 +332,7 @@ fn spawn_room(
                 })
                 .insert(RoomMember)
                 .id();
+            ids.push(id);
             if index == 1 {
                 let x = x as f32 * tile_size * pixel_size + offset.x;
                 let y = y as f32 * -tile_size * pixel_size + offset.y;
@@ -357,7 +358,10 @@ fn spawn_room(
             }
         }
     }
-    println!("{}", frogs_to_check.len());
+    commands
+        .spawn_bundle(SpatialBundle::default())
+        .insert(RoomMember)
+        .push_children(&ids);
 }
 
 fn color_to_tile_index(r: u8, g: u8, b: u8) -> usize {

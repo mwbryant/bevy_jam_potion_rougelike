@@ -18,7 +18,32 @@ impl Plugin for InventoryPlugin {
         app.add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_inventory_ui))
             //.register_inspectable::<Inventory>()
             .add_system(update_inventory_ui)
+            .add_system(create_potion)
             .add_system(player_pickup_ingredient);
+    }
+}
+
+#[derive(Component)]
+pub struct SelectedPotion(bool);
+
+fn create_potion(
+    mut interaction_query: Query<
+        (&Interaction, &Ingredient, &mut UiColor, &mut SelectedPotion),
+        With<Button>,
+    >,
+    inventory: Query<&Inventory, With<Player>>,
+) {
+    if let Ok(inventory) = inventory.get_single() {
+        for (interaction, ingredient, mut color, mut selected) in &mut interaction_query {
+            if matches!(*interaction, Interaction::Clicked) {
+                if let Some(count) = inventory.items.get(ingredient) {
+                    if *count != 0 {
+                        *color = Color::rgba(0.7, 0.4, 0.4, 0.6).into();
+                        *selected = SelectedPotion(true);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -32,16 +57,10 @@ fn update_inventory_ui(
     if let Ok(inventory) = inventory.get_single() {
         for (children, ingredient) in &buttons {
             for child in children {
-                if let Ok(children2) = images.get(*child) {
-                    for child in children2 {
-                        if let Ok(mut text) = text.get_mut(*child) {
-                            let count = inventory.items.get(ingredient).unwrap_or(&0);
-                            *text = Text::from_section(
-                                format!("{}", count),
-                                text.sections[0].style.clone(),
-                            );
-                        }
-                    }
+                if let Ok(mut text) = text.get_mut(*child) {
+                    let count = inventory.items.get(ingredient).unwrap_or(&0);
+                    *text =
+                        Text::from_section(format!("{}", count), text.sections[0].style.clone());
                 }
             }
         }
@@ -63,6 +82,7 @@ pub fn spawn_inventory_ui(
             color: Color::NONE.into(),
             ..default()
         })
+        .insert(Name::new("INVENTORY"))
         .with_children(|parent| {
             // right vertical fill
             parent
@@ -85,7 +105,7 @@ pub fn spawn_inventory_ui(
                 .with_children(|parent| {
                     for ingredient in Ingredient::iter() {
                         parent
-                            .spawn_bundle(ButtonBundle {
+                            .spawn_bundle(ImageBundle {
                                 style: Style {
                                     flex_direction: FlexDirection::RowReverse,
                                     align_items: AlignItems::FlexStart,
@@ -93,13 +113,12 @@ pub fn spawn_inventory_ui(
                                     margin: UiRect::all(Val::Px(10.0)),
                                     ..default()
                                 },
-                                color: Color::rgb(0.5, 0.6, 0.9).into(),
-                                ..default() //Count text
+                                image: ingredient.to_sprite(&assets).into(),
+                                ..default()
                             })
-                            .insert(ingredient)
                             .with_children(|parent| {
                                 parent
-                                    .spawn_bundle(ImageBundle {
+                                    .spawn_bundle(ButtonBundle {
                                         style: Style {
                                             flex_direction: FlexDirection::RowReverse,
                                             align_items: AlignItems::FlexStart,
@@ -109,9 +128,11 @@ pub fn spawn_inventory_ui(
                                             ),
                                             ..default()
                                         },
-                                        image: ingredient.to_sprite(&assets).into(),
-                                        ..default()
+                                        color: Color::NONE.into(),
+                                        ..default() //Count text
                                     })
+                                    .insert(SelectedPotion(false))
+                                    .insert(ingredient)
                                     .with_children(|parent| {
                                         parent.spawn_bundle(TextBundle {
                                             text: Text::from_section(
@@ -145,6 +166,17 @@ fn player_pickup_ingredient(
 ) {
     for event in collision_events.iter() {
         if let CollisionEvent::Started(d1, d2) = event {
+            if let Ok(mut inventory) = player.get_mut(d2.rigid_body_entity()) {
+                if let Ok((ent, ingredients)) = drops.get_mut(d1.rigid_body_entity()) {
+                    commands.entity(ent).despawn_recursive();
+                    if inventory.items.contains_key(ingredients) {
+                        let count = inventory.items[ingredients] + 1;
+                        inventory.items.insert(*ingredients, count);
+                    } else {
+                        inventory.items.insert(*ingredients, 1);
+                    }
+                }
+            }
             if let Ok(mut inventory) = player.get_mut(d1.rigid_body_entity()) {
                 if let Ok((ent, ingredients)) = drops.get_mut(d2.rigid_body_entity()) {
                     commands.entity(ent).despawn_recursive();
