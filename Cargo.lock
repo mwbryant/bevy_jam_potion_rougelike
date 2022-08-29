@@ -633,7 +633,7 @@ dependencies = [
 [[package]]
 name = "bevy_procedural"
 version = "0.1.0"
-source = "git+https://github.com/Braymatter/bevy_procedural?rev=37ea348613833b56618f3a4ba221bcdaf329d27b#37ea348613833b56618f3a4ba221bcdaf329d27b"
+source = "git+https://github.com/Braymatter/bevy_procedural?rev=65a11a8719d033bbf2fa330f6eb5909c1b2f34cc#65a11a8719d033bbf2fa330f6eb5909c1b2f34cc"
 dependencies = [
  "weighted_rand",
 ]

@@ -18,4 +18,4 @@ bevy_asset_loader = { version = "0.12", features = ["2d"]}
 heron = {version = "4.0", features = ["2d"]}
 leafwing-input-manager = "0.5.1"
 derive_more = "0.99.17"
-bevy_procedural = {git="https://github.com/Braymatter/bevy_procedural", rev="37ea348613833b56618f3a4ba221bcdaf329d27b"}
+bevy_procedural = {git="https://github.com/Braymatter/bevy_procedural", rev="65a11a8719d033bbf2fa330f6eb5909c1b2f34cc"}
