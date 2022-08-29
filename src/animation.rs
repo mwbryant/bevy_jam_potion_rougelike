@@ -10,9 +10,47 @@ pub struct Animation {
 
 impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(animate_frog).add_system(animate_bat);
+        app.add_system(animate_frog)
+            .add_system(animate_bat)
+            .add_system(animate_player);
     }
 }
+
+fn animate_player(
+    mut player: Query<(&mut TextureAtlasSprite, &mut Animation, &Player)>,
+    time: Res<Time>,
+) {
+    if let Ok((mut sprite, mut animation, player)) = player.get_single_mut() {
+        sprite.flip_x = player.roll_direction.x > 0.0;
+        if player.rolling {
+            sprite.index = 2;
+            return;
+        }
+        if player.swinging {
+            sprite.flip_x = player.swing_dir_vec2.x > 0.0;
+            sprite.index = 5 + (player.swing_timer.percent() * 4.0) as usize;
+            return;
+        }
+        animation.timer.tick(time.delta());
+        if animation.timer.just_finished() {
+            if player.roll_direction.y > 0.0 {
+                if sprite.index == 3 {
+                    sprite.index = 4;
+                } else {
+                    sprite.index = 3;
+                }
+            } else if sprite.index == 1 {
+                sprite.index = 0;
+            } else {
+                sprite.index = 1;
+            }
+        }
+        if player.roll_direction == Vec3::ZERO {
+            sprite.index = 0;
+        }
+    }
+}
+
 fn animate_frog(
     mut frogs: Query<(
         &mut TextureAtlasSprite,

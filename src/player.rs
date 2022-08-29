@@ -9,15 +9,16 @@ pub struct PlayerPlugin;
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Player {
-    speed: f32,
-    roll_speed: f32,
-    roll_direction: Vec3,
-    rolling: bool,
-    roll_timer: Timer,
-    swing_radius: f32,
-    swing_direction: f32,
-    swinging: bool,
-    swing_timer: Timer,
+    pub speed: f32,
+    pub roll_speed: f32,
+    pub roll_direction: Vec3,
+    pub rolling: bool,
+    pub roll_timer: Timer,
+    pub swing_radius: f32,
+    pub swing_dir_vec2: Vec2,
+    pub swing_direction: f32,
+    pub swinging: bool,
+    pub swing_timer: Timer,
 }
 
 #[derive(Component, Reflect, Default)]
@@ -105,6 +106,7 @@ fn sword_swing(
                 if direction == Vec2::ZERO {
                     direction = Vec2::splat(0.001);
                 }
+                player.swing_dir_vec2 = direction;
                 player.swing_direction =
                     -player.swing_radius / 2.0 - direction.angle_between(Vec2::Y);
                 transform.rotation = Quat::from_axis_angle(Vec3::Z, player.swing_direction);
@@ -138,13 +140,18 @@ fn player_dodge_roll(
             transform.rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
         } else {
             //TODO Probably replace with animation
+            let flip = if player.roll_direction.x < 0.0 {
+                1.0
+            } else {
+                -1.0
+            };
             transform.rotation =
-                Quat::from_axis_angle(Vec3::Z, 2.0 * PI * player.roll_timer.percent());
+                Quat::from_axis_angle(Vec3::Z, flip * 2.0 * PI * player.roll_timer.percent());
         }
     }
 }
 
-fn player_movement(
+pub fn player_movement(
     mut player: Query<(&mut Player, &mut Transform, &ActionState<Action>)>,
     time: Res<Time>,
 ) {
@@ -197,8 +204,13 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             roll_timer: Timer::from_seconds(0.4, true),
             swing_radius: 1.5 * PI / 2.0,
             swing_direction: 0.0,
+            swing_dir_vec2: Vec2::splat(0.0),
             swinging: false,
-            swing_timer: Timer::from_seconds(0.15, true),
+            swing_timer: Timer::from_seconds(0.35, true),
+        })
+        .insert(Animation {
+            current_frame: 0,
+            timer: Timer::from_seconds(0.15, true),
         })
         .insert(Health {
             health: 3.,
@@ -212,7 +224,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
         })
         .insert(Name::new("Player"))
         .insert(CollisionShape::Capsule {
-            half_segment: 35.0,
+            half_segment: 55.0,
             radius: 35.0,
         })
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Player))

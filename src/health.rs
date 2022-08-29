@@ -14,10 +14,42 @@ pub struct HealthPlugin;
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Health>()
+            .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_health_ui))
             .add_system(sword_collision)
             .add_system_to_stage(CoreStage::PostUpdate, damage_flash)
             .add_system(enemy_collision);
     }
+}
+
+fn spawn_health_ui(mut commands: Commands, assets: Res<GameAssets>) {
+    commands
+        .spawn_bundle(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                justify_content: JustifyContent::FlexEnd,
+                ..default()
+            },
+            color: Color::NONE.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            // right vertical fill
+            parent.spawn_bundle(NodeBundle {
+                style: Style {
+                    align_self: AlignSelf::FlexStart,
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::FlexStart,
+                    align_content: AlignContent::FlexEnd,
+                    margin: UiRect::all(Val::Px(20.0)),
+                    flex_wrap: FlexWrap::Wrap,
+                    size: Size::new(Val::Px(200.0), Val::Percent(30.0)),
+                    ..default()
+                },
+                color: Color::GREEN.into(),
+                //color: Color::rgb(0.95, 0.15, 0.15).into(),
+                ..default()
+            });
+        });
 }
 
 fn damage_flash(mut health: Query<(&mut Health, &mut TextureAtlasSprite)>, time: Res<Time>) {

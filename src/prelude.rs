@@ -9,6 +9,7 @@ pub use crate::input::*;
 pub use crate::mouse::*;
 pub use crate::music::*;
 pub use crate::player::*;
+pub use crate::world_gen::*;
 pub use crate::*;
 
 pub use heron::*;

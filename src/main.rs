@@ -20,6 +20,7 @@ mod mouse;
 mod music;
 mod player;
 mod prelude;
+mod world_gen;
 
 #[derive(AssetCollection)]
 pub struct GameAssets {
@@ -76,6 +77,11 @@ pub struct GameAssets {
     bat_wings: Handle<Image>,
     #[asset(path = "BatEars.png")]
     bat_ears: Handle<Image>,
+
+    #[asset(path = "Heart.png")]
+    heart: Handle<Image>,
+    #[asset(path = "Heart_Empty.png")]
+    heart_empty: Handle<Image>,
 }
 
 #[derive(AssetCollection)]
@@ -134,7 +140,10 @@ fn main() {
         .add_system(mouse_position)
         //.add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_temp_walls))
         .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_cross_room))
-        .add_system_set(SystemSet::on_update(GameState::Main).with_system(camera_follows_player))
+        .add_system_set(
+            SystemSet::on_update(GameState::Main)
+                .with_system(camera_follows_player.after(player_movement)),
+        )
         .run();
 }
 
