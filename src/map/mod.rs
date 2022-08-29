@@ -1,4 +1,4 @@
-use bevy_procedural::{Direction, SPCell, SuperPositionGrid, CellLocation};
+use bevy_procedural::{CellLocation, Direction, SPCell, SuperPositionGrid};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum MapTile {
@@ -48,28 +48,28 @@ impl MapTile {
             Self::ETee,
             Self::STee,
             Self::WTee,
-
             Self::Empty,
-            Self::Cross
+            Self::Cross,
         ]
     }
 
-    pub fn no_end() -> Vec<MapTile>{
-        vec![         //Direction of pipe is first exit, second is two directions clockwise
-                    Self::NPipe,
-                    Self::EPipe,
-                    //Direction of the elbow is first exit, second is one direction clockwise
-                    Self::NElbow,
-                    Self::EElbow,
-                    Self::SElbow,
-                    Self::WElbow,
-                    //Direction is the left most branch of the Tee, second and third exits are the two directions adjacent clockwise
-                    Self::NTee,
-                    Self::ETee,
-                    Self::STee,
-                    Self::WTee,
-                    Self::Cross,
-                    Self::Empty,
+    pub fn no_end() -> Vec<MapTile> {
+        vec![
+            //Direction of pipe is first exit, second is two directions clockwise
+            Self::NPipe,
+            Self::EPipe,
+            //Direction of the elbow is first exit, second is one direction clockwise
+            Self::NElbow,
+            Self::EElbow,
+            Self::SElbow,
+            Self::WElbow,
+            //Direction is the left most branch of the Tee, second and third exits are the two directions adjacent clockwise
+            Self::NTee,
+            Self::ETee,
+            Self::STee,
+            Self::WTee,
+            Self::Cross,
+            Self::Empty,
         ]
     }
     pub fn conns_to(&self, dir: Direction) -> bool {
@@ -93,7 +93,12 @@ impl MapTile {
             MapTile::STee => &[Direction::South, Direction::East, Direction::North],
             MapTile::WTee => &[Direction::West, Direction::South, Direction::East],
             MapTile::Empty => &[],
-            MapTile::Cross => &[Direction::West, Direction::North, Direction::East, Direction::South]
+            MapTile::Cross => &[
+                Direction::West,
+                Direction::North,
+                Direction::East,
+                Direction::South,
+            ],
         }
     }
 
@@ -131,25 +136,25 @@ impl MapTile {
             Direction::North => {
                 if !MapTile::can_connect_to(neighbor, Direction::South) {
                     filtered_positions = MapTile::remove_positions_conn_to(neighbor_dir, positions);
-                }else{
+                } else {
                 }
             }
             Direction::South => {
                 if !MapTile::can_connect_to(neighbor, Direction::North) {
                     filtered_positions = MapTile::remove_positions_conn_to(neighbor_dir, positions);
-                }else{
+                } else {
                 }
             }
             Direction::East => {
                 if !MapTile::can_connect_to(neighbor, Direction::West) {
                     filtered_positions = MapTile::remove_positions_conn_to(neighbor_dir, positions);
-                }else{
+                } else {
                 }
             }
             Direction::West => {
                 if !MapTile::can_connect_to(neighbor, Direction::East) {
                     filtered_positions = MapTile::remove_positions_conn_to(neighbor_dir, positions);
-                }else{
+                } else {
                 }
             }
         }
@@ -207,9 +212,7 @@ pub fn collapse_map_geometry(
 pub fn no_end_table_value() -> (Vec<MapTile>, Vec<f32>) {
     (
         MapTile::no_end(),
-        vec![
-            0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,0.5,0.5
-        ],
+        vec![0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
     )
 }
 
@@ -217,7 +220,7 @@ pub fn all_table_values() -> (Vec<MapTile>, Vec<f32>) {
     (
         MapTile::all(),
         vec![
-            0.5, 0.5, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8,0.8, 0.8, 0.5,0.01,0.5
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.5, 0.01, 0.5,
         ],
     )
 }
@@ -226,11 +229,14 @@ fn init_grid(height: usize, width: usize) -> SuperPositionGrid<MapTile> {
     SuperPositionGrid::new(height, width, &MapTile::all())
 }
 
-pub fn generate_map(width: usize, height: usize) -> Result<Vec<Vec<MapTile>>, bevy_procedural::PossibilityError>{
+pub fn generate_map(
+    width: usize,
+    height: usize,
+) -> Result<Vec<Vec<MapTile>>, bevy_procedural::PossibilityError> {
     let mut grid = init_grid(height, width);
     let table = no_end_table_value();
 
-    grid.override_positions(CellLocation{x: 3, y: 3}, vec![MapTile::Cross]);
+    grid.override_positions(CellLocation { x: 3, y: 3 }, vec![MapTile::Cross]);
 
     grid.full_collapse(collapse_map_geometry, (&table.0, &table.1));
 

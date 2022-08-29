@@ -8,19 +8,19 @@ mod tests {
     }
 
     #[test]
-    fn test_edge_boundaries(){
+    fn test_edge_boundaries() {
         let mut grid = init_grid(5, 5);
         let table = no_end_table_value();
 
         grid.full_collapse(collapse_map_geometry, (&table.0, &table.1));
 
-        let result= grid.peek_render();
+        let result = grid.peek_render();
         result.iter().for_each(|row| {
-            row.iter().for_each(|cell|{
+            row.iter().for_each(|cell| {
                 let positions = cell.positions.clone();
                 print!("{positions:?}");
             });
-            
+
             println!();
         })
     }
@@ -32,12 +32,12 @@ mod tests {
 
         grid.full_collapse(collapse_map_geometry, (&table.0, &table.1));
 
-        let result= grid.peek_render();
+        let result = grid.peek_render();
         result.iter().for_each(|row| {
-            row.iter().for_each(|cell|{
+            row.iter().for_each(|cell| {
                 print!("{cell:?}");
             });
-            
+
             println!();
         })
     }
