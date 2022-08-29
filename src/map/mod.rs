@@ -226,19 +226,13 @@ fn init_grid(height: usize, width: usize) -> SuperPositionGrid<MapTile> {
     SuperPositionGrid::new(height, width, &MapTile::all())
 }
 
-pub fn generate_map() {
-    let mut grid = init_grid(5, 5);
+pub fn generate_map(width: usize, height: usize) -> Result<Vec<Vec<MapTile>>, bevy_procedural::PossibilityError>{
+    let mut grid = init_grid(height, width);
     let table = no_end_table_value();
 
     grid.override_positions(CellLocation{x: 3, y: 3}, vec![MapTile::Cross]);
 
     grid.full_collapse(collapse_map_geometry, (&table.0, &table.1));
 
-    let result = grid.peek_render();
-    result.iter().for_each(|row| {
-        row.iter().for_each(|cell| {
-            let positions = cell.positions.clone();
-            print!("{positions:?}");
-        });
-    })
+    grid.render()
 }
