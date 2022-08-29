@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{inventory::spawn_inventory_ui, prelude::*};
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
@@ -8,16 +8,37 @@ pub struct Health {
     pub damage_flash_timer: Timer,
     pub damage_flash_times_per_hit: usize,
 }
+#[derive(Component)]
+pub struct HealthUI(usize);
 
 pub struct HealthPlugin;
 
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Health>()
-            .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_health_ui))
+            .add_system_set(
+                SystemSet::on_enter(GameState::Main)
+                    .with_system(spawn_health_ui.before(spawn_inventory_ui)),
+            )
+            .add_system_set(SystemSet::on_update(GameState::Main).with_system(update_health_ui))
             .add_system(sword_collision)
             .add_system_to_stage(CoreStage::PostUpdate, damage_flash)
             .add_system(enemy_collision);
+    }
+}
+fn update_health_ui(
+    mut hearts: Query<(&mut UiImage, &HealthUI)>,
+    player: Query<&Health, With<Player>>,
+    assets: Res<GameAssets>,
+) {
+    if let Ok(player) = player.get_single() {
+        for (mut image, heart) in &mut hearts {
+            if player.health < heart.0 as f32 {
+                *image = assets.heart_empty.clone().into();
+            } else {
+                *image = assets.heart.clone().into();
+            }
+        }
     }
 }
 
@@ -26,7 +47,7 @@ fn spawn_health_ui(mut commands: Commands, assets: Res<GameAssets>) {
         .spawn_bundle(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                justify_content: JustifyContent::FlexEnd,
+                justify_content: JustifyContent::FlexStart,
                 ..default()
             },
             color: Color::NONE.into(),
@@ -34,21 +55,40 @@ fn spawn_health_ui(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .with_children(|parent| {
             // right vertical fill
-            parent.spawn_bundle(NodeBundle {
-                style: Style {
-                    align_self: AlignSelf::FlexStart,
-                    flex_direction: FlexDirection::Row,
-                    justify_content: JustifyContent::FlexStart,
-                    align_content: AlignContent::FlexEnd,
-                    margin: UiRect::all(Val::Px(20.0)),
-                    flex_wrap: FlexWrap::Wrap,
-                    size: Size::new(Val::Px(200.0), Val::Percent(30.0)),
+            parent
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        align_self: AlignSelf::FlexEnd,
+                        flex_direction: FlexDirection::Row,
+                        justify_content: JustifyContent::FlexStart,
+                        //align_content: AlignContent::FlexEnd,
+                        margin: UiRect::all(Val::Px(20.0)),
+                        flex_wrap: FlexWrap::Wrap,
+                        size: Size::new(Val::Percent(100.0), Val::Percent(20.0)),
+                        ..default()
+                    },
+                    color: Color::NONE.into(),
+                    //color: Color::rgb(0.95, 0.15, 0.15).into(),
                     ..default()
-                },
-                color: Color::GREEN.into(),
-                //color: Color::rgb(0.95, 0.15, 0.15).into(),
-                ..default()
-            });
+                })
+                .with_children(|parent| {
+                    for i in 1..4 {
+                        parent
+                            .spawn_bundle(ImageBundle {
+                                style: Style {
+                                    flex_direction: FlexDirection::Row,
+                                    align_items: AlignItems::FlexEnd,
+                                    align_self: AlignSelf::FlexEnd,
+                                    size: Size::new(Val::Px(1.8 * 32.0), Val::Px(1.8 * 32.0)),
+                                    margin: UiRect::all(Val::Px(5.0)),
+                                    ..default()
+                                },
+                                image: assets.heart.clone().into(),
+                                ..default()
+                            })
+                            .insert(HealthUI(i));
+                    }
+                });
         });
 }
 

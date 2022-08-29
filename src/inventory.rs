@@ -48,7 +48,7 @@ fn update_inventory_ui(
     }
 }
 
-fn spawn_inventory_ui(
+pub fn spawn_inventory_ui(
     mut commands: Commands,
     assets: Res<GameAssets>,
     asset_server: Res<AssetServer>,
