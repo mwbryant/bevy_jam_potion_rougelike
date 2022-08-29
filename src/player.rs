@@ -211,9 +211,9 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             ..default()
         })
         .insert(Name::new("Player"))
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec2::new(35.0, 35.0).extend(1.0),
-            border_radius: None,
+        .insert(CollisionShape::Capsule {
+            half_segment: 35.0,
+            radius: 35.0,
         })
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Player))
         .insert(RotationConstraints::lock())
@@ -232,13 +232,13 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                             //..default()
                             //},
                             //texture_atlas: assets.player.clone(),
-                            transform: Transform::from_xyz(0.0, 0.85, 0.1)
+                            transform: Transform::from_xyz(0.0, 24.85, 0.1)
                                 .with_scale(Vec3::new(0.2, 0.9, 1.0)),
                             //.with_rotation(Quat::from_axis_angle(Vec3::Z, -PI / 4.0)),
                             ..default()
                         })
                         .insert(CollisionShape::Cuboid {
-                            half_extends: Vec2::new(10.0, 45.0).extend(1.0),
+                            half_extends: Vec2::new(10.0, 65.0).extend(1.0),
                             border_radius: None,
                         })
                         .insert(RigidBody::Sensor)

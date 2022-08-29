@@ -171,6 +171,9 @@ fn spawn_cross_room(
     let width = image.size().x as usize;
     let height = image.size().y as usize;
 
+    let pixel_size = 1.5;
+    let tile_size = 64.0;
+
     for y in 0..height {
         for x in 0..width {
             let index = 4 * (x + y * width);
@@ -178,16 +181,35 @@ fn spawn_cross_room(
             let g = image.data[index + 1];
             let b = image.data[index + 2];
             let index = color_to_tile_index(r, g, b);
-            commands.spawn_bundle(SpriteSheetBundle {
-                sprite: TextureAtlasSprite {
-                    index: index,
+            let id = commands
+                .spawn_bundle(SpriteSheetBundle {
+                    sprite: TextureAtlasSprite {
+                        index: index,
+                        ..default()
+                    },
+                    texture_atlas: assets.tileset.clone(),
+                    transform: Transform::from_xyz(
+                        x as f32 * tile_size * pixel_size,
+                        y as f32 * tile_size * pixel_size,
+                        0.0,
+                    )
+                    .with_scale(Vec3::splat(pixel_size)),
                     ..default()
-                },
-                texture_atlas: assets.tileset.clone(),
-                transform: Transform::from_xyz(x as f32 * 32.0 * 1.5, y as f32 * 32.0 * 1.5, 0.0)
-                    .with_scale(Vec3::splat(1.50)),
-                ..default()
-            });
+                })
+                .id();
+            if index == 1 {
+                commands
+                    .entity(id)
+                    .insert(CollisionShape::Cuboid {
+                        half_extends: Vec2::splat(tile_size * pixel_size / 2.0).extend(1.0),
+                        border_radius: None,
+                    })
+                    .insert(
+                        CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World),
+                    )
+                    .insert(RotationConstraints::lock())
+                    .insert(RigidBody::Static);
+            }
         }
     }
 
