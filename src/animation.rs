@@ -21,7 +21,9 @@ fn animate_player(
     time: Res<Time>,
 ) {
     if let Ok((mut sprite, mut animation, player)) = player.get_single_mut() {
-        sprite.flip_x = player.roll_direction.x > 0.0;
+        if player.roll_direction != Vec3::ZERO {
+            sprite.flip_x = player.roll_direction.x > 0.0;
+        }
         if player.rolling {
             sprite.index = 2;
             return;
