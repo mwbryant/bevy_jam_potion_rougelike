@@ -7,6 +7,7 @@ pub const HEIGHT: f32 = 900.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
 
 mod input;
+mod map;
 mod mouse;
 mod player;
 mod prelude;
