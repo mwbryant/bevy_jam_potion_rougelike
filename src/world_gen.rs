@@ -9,12 +9,48 @@ impl Plugin for MapPlugin {
         app.add_startup_system(create_map)
             .add_event::<ExitEvent>()
             .add_system(exit_collision)
+            .add_system(fadeout)
             .add_system_set(SystemSet::on_update(GameState::Main).with_system(load_next_room))
             .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_start_room));
     }
 }
 
+#[derive(Clone)]
 pub struct ExitEvent(ExitDirection);
+
+#[derive(Component)]
+pub struct ScreenFade {
+    pub event: ExitEvent,
+    pub timer: Timer,
+    pub sent: bool,
+    pub alpha: f32,
+}
+
+fn fadeout(
+    mut commands: Commands,
+    mut fade_query: Query<(Entity, &mut ScreenFade, &mut Sprite)>,
+    mut events: EventWriter<ExitEvent>,
+    time: Res<Time>,
+) {
+    for (entity, mut fade, mut sprite) in fade_query.iter_mut() {
+        fade.timer.tick(time.delta());
+        if fade.timer.percent() < 0.5 {
+            fade.alpha = fade.timer.percent() * 2.0;
+        } else {
+            fade.alpha = fade.timer.percent_left() * 2.0;
+        }
+        sprite.color.set_a(fade.alpha);
+
+        if fade.timer.percent() > 0.5 && !fade.sent {
+            fade.sent = true;
+            events.send(fade.event.clone());
+        }
+
+        if fade.timer.just_finished() {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+}
 
 #[derive(Component)]
 pub struct RoomMember;
@@ -93,10 +129,10 @@ fn load_next_room(
 }
 
 fn exit_collision(
+    mut commands: Commands,
     mut collision_events: EventReader<CollisionEvent>,
     exits: Query<&ExitDirection>,
     player: Query<(), With<Player>>,
-    mut events: EventWriter<ExitEvent>,
 ) {
     for event in collision_events.iter() {
         if let CollisionEvent::Started(d1, d2) = event {
@@ -104,14 +140,52 @@ fn exit_collision(
                 //ugh
                 if let Ok(dir) = exits.get(d1.rigid_body_entity()) {
                     if let Ok(()) = player.get(d2.rigid_body_entity()) {
-                        events.send(ExitEvent(*dir));
+                        commands
+                            .spawn_bundle(SpriteBundle {
+                                sprite: Sprite {
+                                    color: Color::rgba(0.2, 0.2, 0.2, 0.0),
+                                    ..default()
+                                },
+                                transform: Transform {
+                                    translation: Vec3::new(0.0, 0.0, 999.0),
+                                    scale: Vec3::splat(10000.0),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            })
+                            .insert(ScreenFade {
+                                alpha: 0.0,
+                                sent: false,
+                                event: (ExitEvent(*dir)),
+                                timer: Timer::from_seconds(0.7, false),
+                            })
+                            .insert(Name::new("Fadeout"));
                     }
                 }
             }
             if exits.contains(d2.rigid_body_entity()) {
                 if let Ok(dir) = exits.get(d2.rigid_body_entity()) {
                     if let Ok(()) = player.get(d1.rigid_body_entity()) {
-                        events.send(ExitEvent(*dir));
+                        commands
+                            .spawn_bundle(SpriteBundle {
+                                sprite: Sprite {
+                                    color: Color::rgba(0.2, 0.2, 0.2, 0.0),
+                                    ..default()
+                                },
+                                transform: Transform {
+                                    translation: Vec3::new(0.0, 0.0, 999.0),
+                                    scale: Vec3::splat(10000.0),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            })
+                            .insert(ScreenFade {
+                                alpha: 0.0,
+                                sent: false,
+                                event: (ExitEvent(*dir)),
+                                timer: Timer::from_seconds(0.7, false),
+                            })
+                            .insert(Name::new("Fadeout"));
                     }
                 }
             }
@@ -282,7 +356,7 @@ fn spawn_room(
 
 fn color_to_tile_index(r: u8, g: u8, b: u8) -> usize {
     match (r, g, b) {
-        (0, 154, 83) => 1,
-        _ => 0, //_ => unreachable!("Unknown Color {:?}", (r, g, b)),
+        (11, 61, 38) | (16, 121, 15) | (76, 90, 84) => 0,
+        _ => 1, //_ => unreachable!("Unknown Color {:?}", (r, g, b)),
     }
 }
