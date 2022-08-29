@@ -19,6 +19,7 @@ mod map;
 mod mouse;
 mod music;
 mod player;
+mod potions;
 mod prelude;
 mod start_menu;
 mod world_gen;

@@ -72,7 +72,7 @@ fn spawn_health_ui(mut commands: Commands, assets: Res<GameAssets>) {
                     ..default()
                 })
                 .with_children(|parent| {
-                    for i in 1..4 {
+                    for i in 1..6 {
                         parent
                             .spawn_bundle(ImageBundle {
                                 style: Style {

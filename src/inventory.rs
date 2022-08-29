@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use strum::IntoEnumIterator;
 
-use crate::prelude::*;
+use crate::{potions::Potion, prelude::*};
 
 #[derive(Component, Default, Inspectable)]
 pub struct Inventory {
@@ -31,15 +31,40 @@ fn create_potion(
         (&Interaction, &Ingredient, &mut UiColor, &mut SelectedPotion),
         With<Button>,
     >,
-    inventory: Query<&Inventory, With<Player>>,
+    mut inventory: Query<&mut Inventory, With<Player>>,
+    mut player: Query<(&mut Player, &mut Health)>,
 ) {
-    if let Ok(inventory) = inventory.get_single() {
-        for (interaction, ingredient, mut color, mut selected) in &mut interaction_query {
-            if matches!(*interaction, Interaction::Clicked) {
-                if let Some(count) = inventory.items.get(ingredient) {
-                    if *count != 0 {
-                        *color = Color::rgba(0.7, 0.4, 0.4, 0.6).into();
-                        *selected = SelectedPotion(true);
+    if let Ok((mut player, mut health)) = player.get_single_mut() {
+        if let Ok(mut inventory) = inventory.get_single_mut() {
+            let mut first = None;
+            let mut clear = false;
+            for (_, ingredient, _, mut selected) in &mut interaction_query {
+                if first.is_none() && selected.0 {
+                    first = Some(ingredient);
+                } else if first.is_some() && selected.0 {
+                    let first = first.unwrap();
+                    let item = inventory.items.get_mut(first).unwrap();
+                    *item -= 1;
+                    let item = inventory.items.get_mut(ingredient).unwrap();
+                    *item -= 1;
+                    let potion = Potion::new((*first, *ingredient));
+                    potion.consume(&mut player, &mut health);
+                    clear = true;
+                }
+            }
+            if clear {
+                for (_, ingredient, mut color, mut selected) in &mut interaction_query {
+                    selected.0 = false;
+                    *color = Color::NONE.into();
+                }
+            }
+            for (interaction, ingredient, mut color, mut selected) in &mut interaction_query {
+                if matches!(*interaction, Interaction::Clicked) {
+                    if let Some(count) = inventory.items.get(ingredient) {
+                        if *count != 0 {
+                            *color = Color::rgba(0.7, 0.4, 0.4, 0.6).into();
+                            *selected = SelectedPotion(true);
+                        }
                     }
                 }
             }
