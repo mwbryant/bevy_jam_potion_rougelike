@@ -106,7 +106,7 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
             timer: Timer::from_seconds(0.35, true),
         })
         .insert(Ingredient::BatWings)
-        .insert(CollisionShape::Sphere { radius: 40.0 })
+        .insert(CollisionShape::Sphere { radius: 50.0 })
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
@@ -143,7 +143,7 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
             timer: Timer::from_seconds(0.35, true),
         })
         .insert(Ingredient::FrogEyes)
-        .insert(CollisionShape::Sphere { radius: 40.0 })
+        .insert(CollisionShape::Sphere { radius: 50.0 })
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
         .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))

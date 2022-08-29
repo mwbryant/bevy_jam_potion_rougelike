@@ -1,7 +1,7 @@
-use std::{f32::consts::PI, time::Duration};
+use std::{collections::HashMap, f32::consts::PI, time::Duration};
 
 use crate::{inventory::Inventory, prelude::*};
-use bevy::utils::HashMap;
+//use bevy::utils::HashMap;
 use leafwing_input_manager::{prelude::ActionState, InputManagerBundle};
 
 pub struct PlayerPlugin;

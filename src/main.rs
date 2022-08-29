@@ -50,15 +50,28 @@ pub struct GameAssets {
     #[asset(path = "Bat.png")]
     bat: Handle<TextureAtlas>,
     #[asset(texture_atlas(
-        tile_size_x = 512.,
-        tile_size_y = 512.,
-        columns = 1,
+        tile_size_x = 32.,
+        tile_size_y = 32.,
+        columns = 11,
         rows = 1,
         padding_x = 0.,
         padding_y = 0.
     ))]
-    #[asset(path = "awesome.png")]
+    #[asset(path = "Potions.png")]
     drops: Handle<TextureAtlas>,
+
+    #[asset(path = "FrogEyes.png")]
+    frog_eyes: Handle<Image>,
+    #[asset(path = "FrogLungs.png")]
+    frog_lungs: Handle<Image>,
+    #[asset(path = "FrogLegs.png")]
+    frog_legs: Handle<Image>,
+    #[asset(path = "BatEyes.png")]
+    bat_eyes: Handle<Image>,
+    #[asset(path = "BatWings.png")]
+    bat_wings: Handle<Image>,
+    #[asset(path = "BatEars.png")]
+    bat_ears: Handle<Image>,
 }
 
 fn main() {
