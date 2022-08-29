@@ -20,6 +20,7 @@ mod mouse;
 mod music;
 mod player;
 mod prelude;
+mod start_menu;
 mod world_gen;
 
 #[derive(AssetCollection)]

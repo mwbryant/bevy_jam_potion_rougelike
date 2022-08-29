@@ -250,7 +250,7 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                             ..default()
                         })
                         .insert(CollisionShape::Cuboid {
-                            half_extends: Vec2::new(10.0, 65.0).extend(1.0),
+                            half_extends: Vec2::new(10.0, 95.0).extend(1.0),
                             border_radius: None,
                         })
                         .insert(RigidBody::Sensor)

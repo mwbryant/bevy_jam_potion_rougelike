@@ -51,8 +51,8 @@ impl Plugin for EnemyPlugin {
             .add_system(enemy_attack)
             .add_system(enemy_hitbox_disable)
             // on update because it depends on the game assets being loaded
-            .add_system_set(SystemSet::on_update(GameState::Main).with_system(enemies_die))
-            .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_enemy));
+            .add_system_set(SystemSet::on_update(GameState::Main).with_system(enemies_die));
+        //.add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_enemy));
     }
 }
 fn enemies_die(
@@ -76,24 +76,20 @@ fn enemies_die(
         }
     }
 }
-
-fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
+pub fn spawn_bat(commands: &mut Commands, assets: &Res<GameAssets>, pos: Vec3) {
     let bat_drops = vec![
         Ingredient::BatWings,
         Ingredient::BatEyes,
         Ingredient::BatEars,
     ];
-    let frog_drops = vec![
-        Ingredient::FrogEyes,
-        Ingredient::FrogLungs,
-        Ingredient::FrogLegs,
-    ];
     //Bat
+    let mut pos = pos;
+    pos.z = 10.0;
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite { ..default() },
             texture_atlas: assets.bat.clone(),
-            transform: Transform::from_xyz(200.0, -150.0, 100.0).with_scale(Vec3::splat(2.5)),
+            transform: Transform::from_translation(pos).with_scale(Vec3::splat(2.5)),
             ..default()
         })
         .insert(Enemy {
@@ -126,12 +122,22 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
         .insert(AiStage::GetInRange)
         .insert(RoomMember)
         .insert(Name::new("Bat"));
+}
+
+pub fn spawn_frog(commands: &mut Commands, assets: &Res<GameAssets>, pos: Vec3) {
+    let frog_drops = vec![
+        Ingredient::FrogEyes,
+        Ingredient::FrogLungs,
+        Ingredient::FrogLegs,
+    ];
+    let mut pos = pos;
+    pos.z = 10.0;
     //Frog
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite { ..default() },
             texture_atlas: assets.frog.clone(),
-            transform: Transform::from_xyz(-200.0, -100.0, 100.0).with_scale(Vec3::splat(2.5)),
+            transform: Transform::from_translation(pos).with_scale(Vec3::splat(2.5)),
             ..default()
         })
         .insert(Enemy {

@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::prelude::*;
 
 pub struct MapPlugin;
@@ -27,7 +29,8 @@ fn load_next_room(
     mut commands: Commands,
     to_despawn: Query<Entity, With<RoomMember>>,
     mut event: EventReader<ExitEvent>,
-    assets: Res<BackgroundAssets>,
+    game_assets: Res<GameAssets>,
+    bg_assets: Res<BackgroundAssets>,
     images: Res<Assets<Image>>,
     mut player: Query<&mut Transform, With<Player>>,
     mut map: ResMut<MapDesc>,
@@ -42,7 +45,6 @@ fn load_next_room(
             ExitDirection::East => map.x += 1,
             ExitDirection::West => map.x -= 1,
         }
-        spawn_room(&mut commands, &assets, &images, &map);
         let mut player = player.single_mut();
         let bounds = 28.0 * 0.8 * 64.0;
         match event.0 {
@@ -50,6 +52,42 @@ fn load_next_room(
             ExitDirection::South => player.translation.y = bounds,
             ExitDirection::East => player.translation.x = -bounds,
             ExitDirection::West => player.translation.x = bounds,
+        }
+        let bounds = bounds * 0.7;
+
+        let mut frog_pos = Vec::default();
+        //Spawn some frogs
+        for i in 0..rand::thread_rng().gen_range(3..7) {
+            frog_pos.push(Vec3::new(
+                rand::thread_rng().gen_range(-bounds..bounds),
+                rand::thread_rng().gen_range(-bounds..bounds),
+                0.0,
+            ));
+        }
+        let mut bat_pos = Vec::default();
+        //Spawn some bats
+        for i in 0..rand::thread_rng().gen_range(3..6) {
+            bat_pos.push(Vec3::new(
+                rand::thread_rng().gen_range(-bounds..bounds),
+                rand::thread_rng().gen_range(-bounds..bounds),
+                0.0,
+            ));
+        }
+
+        spawn_room(
+            &mut commands,
+            &bg_assets,
+            &images,
+            &map,
+            &mut frog_pos,
+            &mut bat_pos,
+        );
+
+        for pos in frog_pos {
+            spawn_frog(&mut commands, &game_assets, pos);
+        }
+        for pos in bat_pos {
+            spawn_bat(&mut commands, &game_assets, pos);
         }
     }
 }
@@ -134,9 +172,19 @@ fn spawn_start_room(
     mut commands: Commands,
     assets: Res<BackgroundAssets>,
     images: Res<Assets<Image>>,
+    game_assets: Res<GameAssets>,
     map: Res<MapDesc>,
 ) {
-    spawn_room(&mut commands, &assets, &images, &map);
+    spawn_room(
+        &mut commands,
+        &assets,
+        &images,
+        &map,
+        &mut Vec::default(),
+        &mut Vec::default(),
+    );
+    let pos = Vec3::new(200., 200.0, 0.0);
+    spawn_frog(&mut commands, &game_assets, pos);
 }
 
 fn spawn_room(
@@ -144,6 +192,8 @@ fn spawn_room(
     assets: &Res<BackgroundAssets>,
     images: &Res<Assets<Image>>,
     map: &MapDesc,
+    frogs_to_check: &mut Vec<Vec3>,
+    bats_to_check: &mut Vec<Vec3>,
 ) {
     let room = map.map[map.y][map.x];
     println!("Loading {:?}", room);
@@ -178,6 +228,7 @@ fn spawn_room(
         0.0,
     );
 
+    println!("{}", frogs_to_check.len());
     for y in 0..height {
         for x in 0..width {
             let index = 4 * (x + y * width);
@@ -202,6 +253,16 @@ fn spawn_room(
                 .insert(RoomMember)
                 .id();
             if index == 1 {
+                let x = x as f32 * tile_size * pixel_size + offset.x;
+                let y = y as f32 * -tile_size * pixel_size + offset.y;
+                frogs_to_check.retain(|pos| {
+                    !((pos.x - x).abs() < tile_size * pixel_size * 1.5
+                        && (pos.y - y).abs() < tile_size * pixel_size * 1.5)
+                });
+                bats_to_check.retain(|pos| {
+                    !((pos.x - x).abs() < tile_size * pixel_size * 1.5
+                        && (pos.y - y).abs() < tile_size * pixel_size * 1.5)
+                });
                 commands
                     .entity(id)
                     .insert(CollisionShape::Cuboid {
@@ -216,6 +277,7 @@ fn spawn_room(
             }
         }
     }
+    println!("{}", frogs_to_check.len());
 }
 
 fn color_to_tile_index(r: u8, g: u8, b: u8) -> usize {
