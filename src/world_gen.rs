@@ -82,13 +82,52 @@ fn exit_collision(
 }
 
 pub fn create_map(mut commands: Commands) {
-    let mut map = generate_map(5, 5);
+    //TODO solve bugs with the map generator
+    //Workaround for now is to just hard code a single good map
+    /*     let mut map = generate_map(5, 5);
 
     while matches!(map, Err(..)) {
         map = generate_map(5, 5);
     }
 
-    let map = map.unwrap();
+    let map = map.unwrap(); */
+    let map = vec![
+        vec![
+            MapTile::EElbow,
+            MapTile::EPipe,
+            MapTile::WTee,
+            MapTile::NElbow,
+            MapTile::NEnd,
+        ],
+        vec![
+            MapTile::SElbow,
+            MapTile::ETee,
+            MapTile::Cross,
+            MapTile::Cross,
+            MapTile::WElbow,
+        ],
+        vec![
+            MapTile::EEnd,
+            MapTile::NTee,
+            MapTile::NPipe,
+            MapTile::SElbow,
+            MapTile::NElbow,
+        ],
+        vec![
+            MapTile::EElbow,
+            MapTile::Cross,
+            MapTile::WTee,
+            MapTile::ETee,
+            MapTile::NTee,
+        ],
+        vec![
+            MapTile::SElbow,
+            MapTile::WElbow,
+            MapTile::Empty,
+            MapTile::SEnd,
+            MapTile::SEnd,
+        ],
+    ];
     commands.insert_resource(MapDesc { x: 0, y: 0, map });
 }
 fn spawn_start_room(
