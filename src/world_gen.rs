@@ -131,9 +131,13 @@ fn load_next_room(
 fn exit_collision(
     mut commands: Commands,
     mut collision_events: EventReader<CollisionEvent>,
+    fade: Query<&ScreenFade>,
     exits: Query<&ExitDirection>,
     player: Query<(), With<Player>>,
 ) {
+    if fade.iter().count() != 0 {
+        return;
+    }
     for event in collision_events.iter() {
         if let CollisionEvent::Started(d1, d2) = event {
             if exits.contains(d1.rigid_body_entity()) {
@@ -160,6 +164,7 @@ fn exit_collision(
                                 timer: Timer::from_seconds(0.7, false),
                             })
                             .insert(Name::new("Fadeout"));
+                        return;
                     }
                 }
             }
@@ -186,6 +191,7 @@ fn exit_collision(
                                 timer: Timer::from_seconds(0.7, false),
                             })
                             .insert(Name::new("Fadeout"));
+                        return;
                     }
                 }
             }
