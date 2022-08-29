@@ -1,6 +1,6 @@
 use bevy::prelude::Plugin;
-use bevy_procedural::{CellLocation, Direction, SPCell, SuperPositionGrid};
 use bevy::prelude::*;
+use bevy_procedural::{CellLocation, Direction, SPCell, SuperPositionGrid};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum MapTile {
@@ -251,12 +251,4 @@ pub fn generate_map(
     grid.full_collapse(collapse_map_geometry, (&table.0, &table.1));
 
     grid.render()
-}
-
-pub struct MapPlugin;
-
-impl Plugin for MapPlugin{
-    fn build(&self, app: &mut App) {
-        todo!()
-    }
 }

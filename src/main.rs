@@ -154,7 +154,7 @@ fn main() {
         //despawnable_entities: true,
         //..Default::default()
         //})
-        //.add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(PhysicsPlugin::default())
         //Our Plugins
         .add_plugin(InputPlugin)
@@ -169,7 +169,7 @@ fn main() {
         .add_startup_system(spawn_camera)
         .insert_resource(MousePos::default())
         .add_system(mouse_position)
-        //.add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_temp_walls))
+        .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_room_exits))
         .add_system_set(
             SystemSet::on_update(GameState::Main)
                 .with_system(camera_follows_player.after(player_movement)),
@@ -179,30 +179,41 @@ fn main() {
 
 fn camera_follows_player(
     player_query: Query<&Transform, With<Player>>,
-    mut camera_query: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+    mut camera_query: Query<
+        (&mut Transform, &OrthographicProjection),
+        (With<Camera2d>, Without<Player>),
+    >,
 ) {
     let player_transform = player_query.single().translation;
-    let mut camera_transform = camera_query.single_mut();
+    let (mut camera_transform, ortho) = camera_query.single_mut();
 
     camera_transform.translation.x = player_transform.x;
     camera_transform.translation.y = player_transform.y;
+    let max_cam = 31.0 * 0.8 * 64.0;
+    if camera_transform.translation.y + ortho.top > max_cam {
+        camera_transform.translation.y = max_cam - ortho.top;
+    }
+    if camera_transform.translation.y + ortho.bottom < -max_cam {
+        camera_transform.translation.y = -max_cam - ortho.bottom;
+    }
+    if camera_transform.translation.x + ortho.right > max_cam {
+        camera_transform.translation.x = max_cam - ortho.right;
+    }
+    if camera_transform.translation.x + ortho.left < -max_cam {
+        camera_transform.translation.x = -max_cam - ortho.left;
+    }
 }
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
 }
 
-fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {
+fn spawn_room_exits(mut commands: Commands, assets: Res<GameAssets>) {
+    let exit = 31.0 * 0.8 * 64.0;
     //Left
     commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                color: Color::GRAY,
-                ..default()
-            },
-            texture_atlas: assets.player.clone(),
-            transform: Transform::from_xyz(-600.0, 0.0, 0.0)
-                .with_scale(Vec3::new(100., 1100., 1.0)),
+        .spawn_bundle(SpatialBundle {
+            transform: Transform::from_xyz(-exit, 0.0, 0.0).with_scale(Vec3::new(100., 1100., 1.0)),
             ..default()
         })
         .insert(CollisionShape::Cuboid {
@@ -214,13 +225,8 @@ fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {
         .insert(RigidBody::Static);
     //Right
     commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                color: Color::GRAY,
-                ..default()
-            },
-            texture_atlas: assets.player.clone(),
-            transform: Transform::from_xyz(600.0, 0.0, 0.0).with_scale(Vec3::new(100., 1100., 1.0)),
+        .spawn_bundle(SpatialBundle {
+            transform: Transform::from_xyz(exit, 0.0, 0.0).with_scale(Vec3::new(100., 1100., 1.0)),
             ..default()
         })
         .insert(CollisionShape::Cuboid {
@@ -232,13 +238,8 @@ fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {
         .insert(RigidBody::Static);
     //Top
     commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                color: Color::GRAY,
-                ..default()
-            },
-            texture_atlas: assets.player.clone(),
-            transform: Transform::from_xyz(0.0, 350.0, 0.0).with_scale(Vec3::new(1100., 100., 1.0)),
+        .spawn_bundle(SpatialBundle {
+            transform: Transform::from_xyz(0.0, exit, 0.0).with_scale(Vec3::new(1100., 100., 1.0)),
             ..default()
         })
         .insert(CollisionShape::Cuboid {
@@ -250,14 +251,8 @@ fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {
         .insert(RigidBody::Static);
     //Bottom
     commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                color: Color::GRAY,
-                ..default()
-            },
-            texture_atlas: assets.player.clone(),
-            transform: Transform::from_xyz(0.0, -350.0, 0.0)
-                .with_scale(Vec3::new(1100., 100., 1.0)),
+        .spawn_bundle(SpatialBundle {
+            transform: Transform::from_xyz(0.0, -exit, 0.0).with_scale(Vec3::new(1100., 100., 1.0)),
             ..default()
         })
         .insert(CollisionShape::Cuboid {
