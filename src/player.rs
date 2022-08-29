@@ -1,6 +1,7 @@
-use std::{f32::consts::PI, time::Duration};
+use std::{collections::HashMap, f32::consts::PI, time::Duration};
 
-use crate::prelude::*;
+use crate::{inventory::Inventory, prelude::*};
+//use bevy::utils::HashMap;
 use leafwing_input_manager::{prelude::ActionState, InputManagerBundle};
 
 pub struct PlayerPlugin;
@@ -22,7 +23,8 @@ pub struct Player {
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Sword {
-    damage: f32,
+    pub active: bool,
+    pub damage: f32,
 }
 
 #[derive(Component)]
@@ -34,8 +36,38 @@ impl Plugin for PlayerPlugin {
             .register_type::<Sword>()
             .add_system(player_movement)
             .add_system(sword_swing)
+            .add_system(sword_updating)
             .add_system(player_dodge_roll)
+            .add_system(player_hitbox_updating)
             .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_player));
+    }
+}
+
+fn player_hitbox_updating(mut player: Query<(&Player, &mut CollisionLayers, &mut RigidBody)>) {
+    if let Ok((player, mut collision, mut _rigid)) = player.get_single_mut() {
+        if player.rolling {
+            *collision = CollisionLayers::all_masks::<PhysicLayer>()
+                .without_mask(PhysicLayer::Enemy)
+                .with_group(PhysicLayer::Player);
+        //*rigid = RigidBody::KinematicPositionBased;
+        } else {
+            *collision =
+                CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Player);
+            //*rigid = (RigidBody::Dynamic);
+        }
+    }
+}
+
+fn sword_updating(player: Query<&Player>, mut sword: Query<(&mut Sword, &mut Visibility)>) {
+    if let Ok(player) = player.get_single() {
+        let (mut sword, mut sprite) = sword.single_mut();
+        if player.swinging {
+            sword.active = true;
+            sprite.is_visible = true;
+        } else {
+            sword.active = false;
+            sprite.is_visible = false;
+        }
     }
 }
 
@@ -69,7 +101,10 @@ fn sword_swing(
                 }
             //Otherwise match mouse angle with a bit of an offset and record it
             } else if let Ok((mut transform, global)) = transforms.get_mut(*child) {
-                let direction = **mouse - global.translation().truncate();
+                let mut direction = **mouse - global.translation().truncate();
+                if direction == Vec2::ZERO {
+                    direction = Vec2::splat(0.001);
+                }
                 player.swing_direction =
                     -player.swing_radius / 2.0 - direction.angle_between(Vec2::Y);
                 transform.rotation = Quat::from_axis_angle(Vec3::Z, player.swing_direction);
@@ -151,8 +186,11 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                 ..default()
             },
             texture_atlas: assets.player.clone(),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(100.)),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(70.)),
             ..default()
+        })
+        .insert(Inventory {
+            items: HashMap::default(),
         })
         .insert(Player {
             speed: 200.0,
@@ -165,17 +203,25 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
             swinging: false,
             swing_timer: Timer::from_seconds(0.15, true),
         })
+        .insert(Health {
+            health: 3.,
+            flashing: false,
+            damage_flash_timer: Timer::from_seconds(1.0, true),
+            damage_flash_times_per_hit: 5,
+        })
         .insert_bundle(InputManagerBundle::<Action> {
             input_map: controls.input.clone(),
             ..default()
         })
         .insert(Name::new("Player"))
-        //.insert(CollisionShape::Cuboid {
-        //half_extends: Vec2::new(50.0, 50.0).extend(1.0),
-        //border_radius: None,
-        //})
-        //.insert(RotationConstraints::lock())
-        //.insert(RigidBody::Dynamic)
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec2::new(35.0, 35.0).extend(1.0),
+            border_radius: None,
+        })
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Player))
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Dynamic)
+        .insert(Damping::from_linear(20.5).with_angular(0.2))
         .with_children(|commands| {
             commands
                 .spawn_bundle(SpatialBundle::default())
@@ -194,12 +240,19 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                             //.with_rotation(Quat::from_axis_angle(Vec3::Z, -PI / 4.0)),
                             ..default()
                         })
-                        //.insert(CollisionShape::Cuboid {
-                        //half_extends: Vec2::new(10.0, 45.0).extend(1.0),
-                        //border_radius: None,
-                        //})
-                        //.insert(RigidBody::Sensor)
-                        .insert(Sword { damage: 10.0 })
+                        .insert(CollisionShape::Cuboid {
+                            half_extends: Vec2::new(10.0, 45.0).extend(1.0),
+                            border_radius: None,
+                        })
+                        .insert(RigidBody::Sensor)
+                        .insert(
+                            CollisionLayers::all_masks::<PhysicLayer>()
+                                .with_group(PhysicLayer::Sword),
+                        )
+                        .insert(Sword {
+                            active: false,
+                            damage: 10.0,
+                        })
                         .insert(Name::new("Sword"));
                 });
         });
