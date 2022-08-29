@@ -4,7 +4,7 @@ use bevy::{
 };
 use bevy_asset_loader::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
-use prelude::{health::HealthPlugin, inventory::InventoryPlugin, *};
+use prelude::{health::HealthPlugin, inventory::InventoryPlugin, start_menu::StartPlugin, *};
 
 pub const HEIGHT: f32 = 700.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
@@ -133,12 +133,12 @@ pub struct BackgroundAssets {
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::hex("b0c060").unwrap()))
+        .insert_resource(ClearColor(Color::hex("044a26").unwrap()))
         .insert_resource(ImageSettings::default_nearest())
         .add_state(GameState::Splash)
         .add_loading_state(
             LoadingState::new(GameState::Splash)
-                .continue_to_state(GameState::Main)
+                .continue_to_state(GameState::Menu)
                 .with_collection::<GameAssets>()
                 .with_collection::<BackgroundAssets>(),
         )
@@ -159,6 +159,7 @@ fn main() {
         .add_plugin(PhysicsPlugin::default())
         //Our Plugins
         .add_plugin(InputPlugin)
+        .add_plugin(StartPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
         .add_plugin(HealthPlugin)

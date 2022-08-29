@@ -19,6 +19,7 @@ pub use leafwing_input_manager::prelude::ActionState;
 #[derive(Clone, Copy, Hash, Eq, PartialEq, Debug)]
 pub enum GameState {
     Splash,
+    Menu,
     Main,
 }
 
