@@ -1,4 +1,7 @@
-use bevy::{render::texture::ImageSettings, window::PresentMode};
+use bevy::{
+    render::{render_resource::TextureFormat, texture::ImageSettings},
+    window::PresentMode,
+};
 use bevy_asset_loader::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
 use prelude::{health::HealthPlugin, inventory::InventoryPlugin, *};
@@ -21,14 +24,14 @@ mod prelude;
 #[derive(AssetCollection)]
 pub struct GameAssets {
     #[asset(texture_atlas(
-        tile_size_x = 1.,
-        tile_size_y = 1.,
-        columns = 1,
+        tile_size_x = 80.,
+        tile_size_y = 96.,
+        columns = 9,
         rows = 1,
         padding_x = 0.,
         padding_y = 0.
     ))]
-    #[asset(path = "white_pixel.png")]
+    #[asset(path = "Witch.png")]
     player: Handle<TextureAtlas>,
     #[asset(texture_atlas(
         tile_size_x = 67.,
@@ -75,6 +78,22 @@ pub struct GameAssets {
     bat_ears: Handle<Image>,
 }
 
+#[derive(AssetCollection)]
+pub struct BackgroundAssets {
+    #[asset(texture_atlas(
+        tile_size_x = 64.,
+        tile_size_y = 64.,
+        columns = 7,
+        rows = 1,
+        padding_x = 0.,
+        padding_y = 0.
+    ))]
+    #[asset(path = "Witchbrew-tileset.png")]
+    tileset: Handle<TextureAtlas>,
+    #[asset(path = "Backgrounds/Witchbrew-Cross.png")]
+    cross: Handle<Image>,
+}
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::hex("b0c060").unwrap()))
@@ -83,7 +102,8 @@ fn main() {
         .add_loading_state(
             LoadingState::new(GameState::Splash)
                 .continue_to_state(GameState::Main)
-                .with_collection::<GameAssets>(),
+                .with_collection::<GameAssets>()
+                .with_collection::<BackgroundAssets>(),
         )
         .insert_resource(WindowDescriptor {
             width: HEIGHT * RESOLUTION,
@@ -112,12 +132,70 @@ fn main() {
         .add_startup_system(spawn_camera)
         .insert_resource(MousePos::default())
         .add_system(mouse_position)
-        .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_temp_walls))
+        //.add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_temp_walls))
+        .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_cross_room))
+        .add_system_set(SystemSet::on_update(GameState::Main).with_system(camera_follows_player))
         .run();
+}
+
+fn camera_follows_player(
+    player_query: Query<&Transform, With<Player>>,
+    mut camera_query: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+) {
+    let player_transform = player_query.single().translation;
+    let mut camera_transform = camera_query.single_mut();
+
+    camera_transform.translation.x = player_transform.x;
+    camera_transform.translation.y = player_transform.y;
 }
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
+}
+
+fn color_to_tile_index(r: u8, g: u8, b: u8) -> usize {
+    match (r, g, b) {
+        (0, 154, 83) => 1,
+        _ => 0, //_ => unreachable!("Unknown Color {:?}", (r, g, b)),
+    }
+}
+
+fn spawn_cross_room(
+    mut commands: Commands,
+    assets: Res<BackgroundAssets>,
+    images: Res<Assets<Image>>,
+) {
+    let image = images.get(&assets.cross.clone()).unwrap();
+    assert!(image.texture_descriptor.format == TextureFormat::Rgba8UnormSrgb);
+
+    let width = image.size().x as usize;
+    let height = image.size().y as usize;
+
+    for y in 0..height {
+        for x in 0..width {
+            let index = 4 * (x + y * width);
+            let r = image.data[index];
+            let g = image.data[index + 1];
+            let b = image.data[index + 2];
+            let index = color_to_tile_index(r, g, b);
+            commands.spawn_bundle(SpriteSheetBundle {
+                sprite: TextureAtlasSprite {
+                    index: index,
+                    ..default()
+                },
+                texture_atlas: assets.tileset.clone(),
+                transform: Transform::from_xyz(x as f32 * 32.0 * 1.5, y as f32 * 32.0 * 1.5, 0.0)
+                    .with_scale(Vec3::splat(1.50)),
+                ..default()
+            });
+        }
+    }
+
+    //commands.spawn_bundle(SpriteBundle {
+    //texture: assets.cross.clone(),
+    //transform: Transform::from_scale(Vec3::new(19.5, 12.0, 1.0)),
+    //..default()
+    //});
 }
 
 fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {

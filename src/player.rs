@@ -181,12 +181,9 @@ fn player_movement(
 fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<ControlSettings>) {
     commands
         .spawn_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                color: Color::GREEN,
-                ..default()
-            },
+            sprite: TextureAtlasSprite { ..default() },
             texture_atlas: assets.player.clone(),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(70.)),
+            transform: Transform::from_xyz(0.0, 0.0, 5.0).with_scale(Vec3::splat(2.5)),
             ..default()
         })
         .insert(Inventory {
@@ -229,12 +226,12 @@ fn spawn_player(mut commands: Commands, assets: Res<GameAssets>, controls: Res<C
                 .insert(SwordParent)
                 .with_children(|commands| {
                     commands
-                        .spawn_bundle(SpriteSheetBundle {
-                            sprite: TextureAtlasSprite {
-                                color: Color::RED,
-                                ..default()
-                            },
-                            texture_atlas: assets.player.clone(),
+                        .spawn_bundle(SpatialBundle {
+                            //sprite: TextureAtlasSprite {
+                            //color: Color::RED,
+                            //..default()
+                            //},
+                            //texture_atlas: assets.player.clone(),
                             transform: Transform::from_xyz(0.0, 0.85, 0.1)
                                 .with_scale(Vec3::new(0.2, 0.9, 1.0)),
                             //.with_rotation(Quat::from_axis_angle(Vec3::Z, -PI / 4.0)),
