@@ -107,6 +107,7 @@ pub fn spawn_inventory_ui(
             color: Color::NONE.into(),
             ..default()
         })
+        .insert(MainUI)
         .insert(Name::new("INVENTORY"))
         .with_children(|parent| {
             // right vertical fill

@@ -19,9 +19,9 @@ impl Potion {
             Ingredient::FrogLungs,
             Ingredient::FrogLegs,
         ];
-        if bat_drops.contains(&ingredients.0) && frog_drops.contains(&ingredients.1) {
-            Potion::Health(1)
-        } else if frog_drops.contains(&ingredients.0) && bat_drops.contains(&ingredients.1) {
+        if (bat_drops.contains(&ingredients.0) && frog_drops.contains(&ingredients.1))
+            || (frog_drops.contains(&ingredients.0) && bat_drops.contains(&ingredients.1))
+        {
             Potion::Health(1)
         } else {
             Potion::Speed(1)
@@ -30,7 +30,7 @@ impl Potion {
     pub fn consume(&self, player: &mut Player, health: &mut Health) {
         match self {
             Potion::Speed(strength) => {
-                player.speed = player.speed * (1.0 + (0.1 * *strength as f32));
+                player.speed = player.speed * (1.0 + (0.05 * *strength as f32));
             }
             //Potion::Damage(strength) => {
             //sword.damage = sword.damage * (1.0 + (0.3 * *strength as f32));

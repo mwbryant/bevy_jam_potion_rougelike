@@ -12,6 +12,8 @@ pub struct Health {
 pub struct HealthUI(usize);
 
 pub struct HealthPlugin;
+#[derive(Component)]
+pub struct MainUI;
 
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
@@ -23,9 +25,18 @@ impl Plugin for HealthPlugin {
             .add_system_set(SystemSet::on_update(GameState::Main).with_system(update_health_ui))
             .add_system(sword_collision)
             .add_system_to_stage(CoreStage::PostUpdate, damage_flash)
-            .add_system(enemy_collision);
+            .add_system(enemy_collision)
+            .add_system(player_death);
     }
 }
+fn player_death(player: Query<&Health, With<Player>>, mut state: ResMut<State<GameState>>) {
+    if let Ok(player) = player.get_single() {
+        if player.health <= 0.0 {
+            let _ = state.set(GameState::Menu);
+        }
+    }
+}
+
 fn update_health_ui(
     mut hearts: Query<(&mut UiImage, &HealthUI)>,
     player: Query<&Health, With<Player>>,
@@ -53,6 +64,7 @@ fn spawn_health_ui(mut commands: Commands, assets: Res<GameAssets>) {
             color: Color::NONE.into(),
             ..default()
         })
+        .insert(MainUI)
         .with_children(|parent| {
             // right vertical fill
             parent

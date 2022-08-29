@@ -40,7 +40,25 @@ impl Plugin for PlayerPlugin {
             .add_system(sword_updating)
             .add_system(player_dodge_roll)
             .add_system(player_hitbox_updating)
-            .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_player));
+            .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_player))
+            .add_system_set(SystemSet::on_exit(GameState::Main).with_system(despawn_player));
+    }
+}
+
+fn despawn_player(
+    mut commands: Commands,
+    player: Query<
+        Entity,
+        Or<(
+            With<MainUI>,
+            With<Player>,
+            With<RoomMember>,
+            With<ExitDirection>,
+        )>,
+    >,
+) {
+    for ent in &player {
+        commands.entity(ent).despawn_recursive();
     }
 }
 

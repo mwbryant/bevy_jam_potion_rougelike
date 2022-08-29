@@ -94,7 +94,7 @@ fn spawn_start_menu(mut commands: Commands, assets: Res<AssetServer>) {
                     ));
                 });
             parent.spawn_bundle(TextBundle::from_section(
-                "Code By: LogicProjects, Cathanos\nArt By: Madeline Hunt\nMusic By: Dean Manring",
+                "Code By: LogicProjects, Cathanos\nArt By: Madeline Hunt\nMusic By: Dean Manring\nSfx By: gosha05",
                 TextStyle {
                     font: assets.load("Font/DancingScript-VariableFont_wght.ttf"),
                     font_size: 48.0,

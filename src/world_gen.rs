@@ -1,3 +1,6 @@
+use std::time::Duration;
+
+use bevy_kira_audio::{AudioControl, AudioEasing, AudioTween};
 use rand::Rng;
 
 use crate::prelude::*;
@@ -70,6 +73,8 @@ fn load_next_room(
     images: Res<Assets<Image>>,
     mut player: Query<&mut Transform, With<Player>>,
     mut map: ResMut<MapDesc>,
+    assets: Res<AssetServer>,
+    audio: Res<bevy_kira_audio::prelude::Audio>,
 ) {
     for event in event.iter() {
         for ent in &to_despawn {
@@ -81,6 +86,7 @@ fn load_next_room(
             ExitDirection::East => map.x += 1,
             ExitDirection::West => map.x -= 1,
         }
+
         let mut player = player.single_mut();
         let bounds = 28.0 * 0.8 * 64.0;
         match event.0 {
@@ -91,6 +97,14 @@ fn load_next_room(
         }
         let bounds = bounds * 0.7;
 
+        if map.x == 4 && map.y == 4 {
+            info!("Boss Room");
+            let tween = AudioTween::new(Duration::from_millis(400), AudioEasing::Linear);
+            audio.stop().fade_out(tween);
+            audio.play(assets.load("Music/Boss.wav")).looped();
+            let pos = Vec3::new(200., 200.0, 0.0);
+            spawn_boss(&mut commands, &game_assets, pos);
+        }
         let mut frog_pos = Vec::default();
         //Spawn some frogs
         for i in 0..rand::thread_rng().gen_range(3..7) {

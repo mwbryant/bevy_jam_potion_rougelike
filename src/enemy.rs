@@ -57,7 +57,16 @@ impl Plugin for EnemyPlugin {
 }
 fn enemies_die(
     mut commands: Commands,
-    mut enemy: Query<(Entity, &Health, &Ingredient, &GlobalTransform, &mut AiStage), With<Enemy>>,
+    mut enemy: Query<
+        (
+            Entity,
+            &Health,
+            Option<&Ingredient>,
+            &GlobalTransform,
+            &mut AiStage,
+        ),
+        With<Enemy>,
+    >,
     time: Res<Time>,
     assets: Res<GameAssets>,
 ) {
@@ -69,12 +78,58 @@ fn enemies_die(
             timer.tick(time.delta());
             if timer.just_finished() {
                 commands.entity(ent).despawn_recursive();
-                spawn_drop(&mut commands, *drop, transform.translation(), &assets);
+                if let Some(drop) = drop {
+                    spawn_drop(&mut commands, *drop, transform.translation(), &assets);
+                }
             }
             //ugh
             *ai_stage = AiStage::Dieing(timer);
         }
     }
+}
+
+pub fn spawn_boss(commands: &mut Commands, assets: &Res<GameAssets>, pos: Vec3) {
+    let mut pos = pos;
+    pos.z = 10.0;
+    commands
+        .spawn_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite { ..default() },
+            texture_atlas: assets.turtle.clone(),
+            transform: Transform::from_translation(pos).with_scale(Vec3::splat(2.5)),
+            ..default()
+        })
+        .insert(Enemy {
+            speed: 20.0,
+            attack_speed: 250.0,
+            target_offset: 200.0,
+            charge_time: 0.5,
+            attack_time: 0.8,
+            wait_time: 0.8,
+            jump_time: 0.4,
+            cooldown_time: 0.5,
+        })
+        .insert(Health {
+            health: 140.,
+            flashing: false,
+            damage_flash_timer: Timer::from_seconds(0.6, true),
+            damage_flash_times_per_hit: 5,
+        })
+        .insert(EnemyType::Turtle)
+        .insert(Animation {
+            current_frame: 0,
+            timer: Timer::from_seconds(0.35, true),
+        })
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec3::new(130.0, 35.0, 1.0),
+            border_radius: Some(20.0),
+        })
+        .insert(RotationConstraints::lock())
+        .insert(RigidBody::Dynamic)
+        .insert(CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::Enemy))
+        .insert(Damping::from_linear(10.5).with_angular(0.2))
+        .insert(AiStage::GetInRange)
+        .insert(RoomMember)
+        .insert(Name::new("Turtle"));
 }
 pub fn spawn_bat(commands: &mut Commands, assets: &Res<GameAssets>, pos: Vec3) {
     let bat_drops = vec![

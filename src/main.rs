@@ -47,6 +47,16 @@ pub struct GameAssets {
     #[asset(path = "Frog.png")]
     frog: Handle<TextureAtlas>,
     #[asset(texture_atlas(
+        tile_size_x = 144.,
+        tile_size_y = 48.,
+        columns = 6,
+        rows = 1,
+        padding_x = 1.,
+        padding_y = 1.
+    ))]
+    #[asset(path = "Turtle.png")]
+    turtle: Handle<TextureAtlas>,
+    #[asset(texture_atlas(
         tile_size_x = 70.,
         tile_size_y = 48.,
         columns = 8,
