@@ -236,7 +236,15 @@ pub fn generate_map(
     let mut grid = init_grid(height, width);
     let table = no_end_table_value();
 
-    grid.override_positions(CellLocation { x: 3, y: 3 }, vec![MapTile::Cross]);
+    //grid.override_positions(CellLocation { x: 3, y: 3 }, vec![MapTile::Cross]);
+    grid.override_positions(CellLocation { x: 0, y: 0 }, vec![MapTile::EElbow]);
+    grid.override_positions(
+        CellLocation {
+            x: width as i32 - 1,
+            y: height as i32 - 1,
+        },
+        vec![MapTile::SEnd],
+    );
 
     grid.full_collapse(collapse_map_geometry, (&table.0, &table.1));
 

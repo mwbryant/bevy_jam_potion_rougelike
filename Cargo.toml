@@ -20,6 +20,7 @@ bevy_kira_audio = {version = "0.12", features = ["wav"]}
  #heron = {version = "4.0", features = ["2d", "debug-2d"]}
 heron = {version = "4.0", features = ["2d"]}
 strum = "*"
+rand = "*"
 strum_macros = "*"
 leafwing-input-manager = "0.5.1"
 derive_more = "0.99.17"

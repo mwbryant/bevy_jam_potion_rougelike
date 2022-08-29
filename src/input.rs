@@ -50,11 +50,11 @@ impl Default for ControlSettings {
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(InputManagerPlugin::<Action>::default())
-            .insert_resource(ControlSettings::default())
-            .add_system(controls_window_system)
-            .add_system(buttons_system)
-            .add_system(toggle_keybind_menu)
-            .add_system(binding_window_system);
+            .insert_resource(ControlSettings::default());
+        //.add_system(controls_window_system);
+        //.add_system(buttons_system)
+        //.add_system(toggle_keybind_menu)
+        //.add_system(binding_window_system);
     }
 }
 

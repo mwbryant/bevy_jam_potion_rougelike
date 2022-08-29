@@ -6,6 +6,7 @@ pub use crate::health::*;
 pub use crate::ingredients::*;
 pub use crate::ingredients::*;
 pub use crate::input::*;
+pub use crate::map::*;
 pub use crate::mouse::*;
 pub use crate::music::*;
 pub use crate::player::*;

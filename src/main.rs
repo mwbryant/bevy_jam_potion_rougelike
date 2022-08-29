@@ -91,13 +91,43 @@ pub struct BackgroundAssets {
         tile_size_y = 64.,
         columns = 7,
         rows = 1,
-        padding_x = 0.,
-        padding_y = 0.
+        padding_x = 2.,
+        padding_y = 2.
     ))]
     #[asset(path = "Witchbrew-tileset.png")]
     tileset: Handle<TextureAtlas>,
     #[asset(path = "Backgrounds/Witchbrew-Cross.png")]
     cross: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-EElbow.png")]
+    eelbow: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-EEnd.png")]
+    eend: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-Empty.png")]
+    empty: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-EPipe.png")]
+    epipe: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-ETee.png")]
+    etee: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-NElbow.png")]
+    nelbow: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-NEnd.png")]
+    nend: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-Npipe.png")]
+    npipe: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-NTee.png")]
+    ntee: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-SElbow.png")]
+    selbow: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-SEnd.png")]
+    send: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-STee.png")]
+    stee: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-WElbow.png")]
+    weblow: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-WEnd.png")]
+    wend: Handle<Image>,
+    #[asset(path = "Backgrounds/Witchbrew-WTee.png")]
+    wtee: Handle<Image>,
 }
 
 fn main() {
@@ -120,11 +150,11 @@ fn main() {
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
-        .insert_resource(WorldInspectorParams {
-            despawnable_entities: true,
-            ..Default::default()
-        })
-        .add_plugin(WorldInspectorPlugin::new())
+        //.insert_resource(WorldInspectorParams {
+        //despawnable_entities: true,
+        //..Default::default()
+        //})
+        //.add_plugin(WorldInspectorPlugin::new())
         .add_plugin(PhysicsPlugin::default())
         //Our Plugins
         .add_plugin(InputPlugin)
@@ -134,12 +164,12 @@ fn main() {
         .add_plugin(InventoryPlugin)
         .add_plugin(AnimationPlugin)
         .add_plugin(MusicPlugin)
+        .add_plugin(MapPlugin)
         //One off weird systems
         .add_startup_system(spawn_camera)
         .insert_resource(MousePos::default())
         .add_system(mouse_position)
         //.add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_temp_walls))
-        .add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_cross_room))
         .add_system_set(
             SystemSet::on_update(GameState::Main)
                 .with_system(camera_follows_player.after(player_movement)),
@@ -160,73 +190,6 @@ fn camera_follows_player(
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
-}
-
-fn color_to_tile_index(r: u8, g: u8, b: u8) -> usize {
-    match (r, g, b) {
-        (0, 154, 83) => 1,
-        _ => 0, //_ => unreachable!("Unknown Color {:?}", (r, g, b)),
-    }
-}
-
-fn spawn_cross_room(
-    mut commands: Commands,
-    assets: Res<BackgroundAssets>,
-    images: Res<Assets<Image>>,
-) {
-    let image = images.get(&assets.cross.clone()).unwrap();
-    assert!(image.texture_descriptor.format == TextureFormat::Rgba8UnormSrgb);
-
-    let width = image.size().x as usize;
-    let height = image.size().y as usize;
-
-    let pixel_size = 1.5;
-    let tile_size = 64.0;
-
-    for y in 0..height {
-        for x in 0..width {
-            let index = 4 * (x + y * width);
-            let r = image.data[index];
-            let g = image.data[index + 1];
-            let b = image.data[index + 2];
-            let index = color_to_tile_index(r, g, b);
-            let id = commands
-                .spawn_bundle(SpriteSheetBundle {
-                    sprite: TextureAtlasSprite {
-                        index: index,
-                        ..default()
-                    },
-                    texture_atlas: assets.tileset.clone(),
-                    transform: Transform::from_xyz(
-                        x as f32 * tile_size * pixel_size,
-                        y as f32 * tile_size * pixel_size,
-                        0.0,
-                    )
-                    .with_scale(Vec3::splat(pixel_size)),
-                    ..default()
-                })
-                .id();
-            if index == 1 {
-                commands
-                    .entity(id)
-                    .insert(CollisionShape::Cuboid {
-                        half_extends: Vec2::splat(tile_size * pixel_size / 2.0).extend(1.0),
-                        border_radius: None,
-                    })
-                    .insert(
-                        CollisionLayers::all_masks::<PhysicLayer>().with_group(PhysicLayer::World),
-                    )
-                    .insert(RotationConstraints::lock())
-                    .insert(RigidBody::Static);
-            }
-        }
-    }
-
-    //commands.spawn_bundle(SpriteBundle {
-    //texture: assets.cross.clone(),
-    //transform: Transform::from_scale(Vec3::new(19.5, 12.0, 1.0)),
-    //..default()
-    //});
 }
 
 fn spawn_temp_walls(mut commands: Commands, assets: Res<GameAssets>) {

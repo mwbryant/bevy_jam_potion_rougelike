@@ -3011,6 +3011,7 @@ dependencies = [
  "derive_more",
  "heron",
  "leafwing-input-manager",
+ "rand",
  "ron 0.8.0",
  "serde",
  "strum",

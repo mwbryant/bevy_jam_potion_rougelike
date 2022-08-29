@@ -16,7 +16,7 @@ pub struct InventoryPlugin;
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_enter(GameState::Main).with_system(spawn_inventory_ui))
-            .register_inspectable::<Inventory>()
+            //.register_inspectable::<Inventory>()
             .add_system(update_inventory_ui)
             .add_system(player_pickup_ingredient);
     }

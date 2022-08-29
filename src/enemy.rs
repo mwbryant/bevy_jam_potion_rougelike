@@ -1,3 +1,5 @@
+use rand::seq::SliceRandom;
+
 use crate::prelude::*;
 
 pub struct EnemyPlugin;
@@ -76,6 +78,16 @@ fn enemies_die(
 }
 
 fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
+    let bat_drops = vec![
+        Ingredient::BatWings,
+        Ingredient::BatEyes,
+        Ingredient::BatEars,
+    ];
+    let frog_drops = vec![
+        Ingredient::FrogEyes,
+        Ingredient::FrogLungs,
+        Ingredient::FrogLegs,
+    ];
     //Bat
     commands
         .spawn_bundle(SpriteSheetBundle {
@@ -105,7 +117,7 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
             current_frame: 0,
             timer: Timer::from_seconds(0.35, true),
         })
-        .insert(Ingredient::BatWings)
+        .insert(*bat_drops.choose(&mut rand::thread_rng()).unwrap())
         .insert(CollisionShape::Sphere { radius: 50.0 })
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
@@ -142,7 +154,7 @@ fn spawn_enemy(mut commands: Commands, assets: Res<GameAssets>) {
             current_frame: 0,
             timer: Timer::from_seconds(0.35, true),
         })
-        .insert(Ingredient::FrogEyes)
+        .insert(*frog_drops.choose(&mut rand::thread_rng()).unwrap())
         .insert(CollisionShape::Sphere { radius: 50.0 })
         .insert(RotationConstraints::lock())
         .insert(RigidBody::Dynamic)
